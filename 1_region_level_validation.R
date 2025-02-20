@@ -1,5 +1,5 @@
-rm(list=ls())
-gc()
+#rm(list=ls())
+#gc()
 if(dev.interactive()) dev.off()
 outType <- "testRun"
 neighborIDs <- T
@@ -7,7 +7,7 @@ toFile <- F
 asParallel <- F
 if(neighborIDs) asParallel <- T
 if(!exists("toFile")) toFile <- T
-nSegs <- 1000
+nSegs <- 20000
 if(toFile) nSegs <- 20000
 ttAll <- T # T = Add data outside forest declarations to the simulations
 
@@ -91,7 +91,6 @@ calculateOPSdata  <-  function(r_noi, neighborIDs=T, weighted = F){
   landClassX <- 1:2
   #print(r_no)
   
-  noPrebas <- T  
   #    devtools::source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/finRuns/Rsrc/settings.r")
   source("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Settings_IBCCarbon.R", local=TRUE)  
   vars_to_prebas <- colnames(data.all)
@@ -593,6 +592,7 @@ calculateOPSdata  <-  function(r_noi, neighborIDs=T, weighted = F){
 }
 
 ij <- 4
+fmi_from_allas <- F
 calculateStatistics <- function(ij, fmi_from_allas=F){
   r_noi <- rids[ij]
   r_no <- rnos[r_noi]
@@ -721,21 +721,36 @@ calculateStatistics <- function(ij, fmi_from_allas=F){
   #print(sampleXs$region$multiOut[1,,"W_wsap/fireRisk[layer_1]",1,2])
   #print("windprob:")
   #print(sampleXs$region$outDist[1,,"wrisk"])
+
+  # SBB simulated damage segments
+  SBBReactionBA <-  apply(sampleXs$region$multiOut[,,"grossGrowth/bb BA disturbed",,2],1:2,sum)
+  BA <- apply(sampleXs$region$multiOut[,,"grossGrowth/bb BA disturbed",,1],1:2,sum)
+  Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
+  Vrw <- cbind(Vrw,Vrw[,ncol(Vrw)])
+  areaSample <- array(ops[[1]]$area,c(dim(SBBReactionBA))) # Segment areas where damage happened
+  areaSample[SBBReactionBA==0] <- 0
+  #if(clcut==-1){ # if no clearcut, calculate only the 
+  areaSample[SBBReactionBA>0 & Vrw==0] <- areaSample[SBBReactionBA>0 & Vrw==0]*
+    SBBReactionBA[SBBReactionBA>0 & Vrw==0]/BA[SBBReactionBA>0 & Vrw==0]
+  areaSample[BA==0] <- 0
+  ##
   
+    
   years <- (startingYear+1):endingYear
   years <- years[years>2018 & years<2024]
-  bb_dam_area <- array(0,c(length(years),2),dimnames = list(years,c("sampledata","simulation")))
+  bb_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","expected_sim","simulation")))
   for(ti in 1:length(years)){
     yeari <- years[ti]
     bb_dam_area[ti,] <- c(sum(ops[[1]]$area[which(ops[[1]]$forestdamagequalifier=="1602" &
                                                     as.numeric(ops[[1]]$dam_year)==yeari)]),
-                          sum(sampleXs$region$multiOut[,yeari-2015,"Rh/SBBpob[layer_1]",1,2]*ops[[1]]$area))
+                          sum(sampleXs$region$multiOut[,yeari-2015,"Rh/SBBpob[layer_1]",1,2]*ops[[1]]$area),
+                          sum(areaSample[,yeari-2015]))
   }
   print(paste("Region",r_no,"/",regnames[r_noi]))
   print(bb_dam_area)
   print(colSums(bb_dam_area))
 }
-calculateStatistics(4, fmi_from_allas = T)
+calculateStatistics(4, fmi_from_allas = F)
 
 break()
 if(asParallel){
