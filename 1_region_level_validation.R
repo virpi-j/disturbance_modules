@@ -592,7 +592,7 @@ calculateOPSdata  <-  function(r_noi, neighborIDs=T, weighted = F){
 }
 
 ij <- 4
-fmi_from_allas <- F
+if(!exists("fmi_from_allas")) fmi_from_allas<- F
 calculateStatistics <- function(ij, fmi_from_allas=F){
   r_noi <- rids[ij]
   r_no <- rnos[r_noi]
@@ -750,7 +750,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F){
   print(bb_dam_area)
   print(colSums(bb_dam_area))
 }
-calculateStatistics(4, fmi_from_allas = F)
+calculateStatistics(4, fmi_from_allas = fmi_from_allas)
 
 break()
 if(asParallel){
