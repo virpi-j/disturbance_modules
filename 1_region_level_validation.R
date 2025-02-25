@@ -7,7 +7,7 @@ toFile <- F
 asParallel <- F
 if(neighborIDs) asParallel <- T
 if(!exists("toFile")) toFile <- T
-nSegs <- 20000
+nSegs <- 5000
 if(toFile) nSegs <- 20000
 ttAll <- T # T = Add data outside forest declarations to the simulations
 
