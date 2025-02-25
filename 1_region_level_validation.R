@@ -738,7 +738,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
 
   # SBB simulated damage segments
   #SBBReactionBA <-  apply(sampleXs$region$multiOut[,,"grossGrowth/bb BA disturbed",,2],1:2,sum)
-  SBBReactionBA <-  apply(sampleXs$region$multiOut[,,"grossGrowth",,2],1:2,sum)
+  SBBReactionBA <-  apply(sampleXs$region$multiOut[,,43,,2],1:2,sum)
   any(SBBReactionBA>0)
   BA <- apply(sampleXs$region$multiOut[,,"BA",,1],1:2,sum)
   Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
