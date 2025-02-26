@@ -7,7 +7,7 @@ toFile <- F
 asParallel <- F
 if(neighborIDs) asParallel <- T
 if(!exists("toFile")) toFile <- T
-nSegs <- 5000
+nSegs <- 10000
 if(toFile) nSegs <- 20000
 ttAll <- T # T = Add data outside forest declarations to the simulations
 
@@ -604,6 +604,7 @@ ij <- 4
 if(!exists("fmi_from_allas")) fmi_from_allas <- T
 if(!exists("weighted")) weighted <- F
 calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
+  set.seed(1)
   toMem <- ls()
   r_noi <- rids[ij]
   r_no <- rnos[r_noi]
@@ -689,14 +690,14 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   
   deltaID=1; sampleID=1; climScen=0; easyInit=FALSE; CO2fixed=0;forceSaveInitSoil=F; cons10run = F; procDrPeat=F;coeffPeat1=-240;coeffPeat2=70;coefCH4 = 0.34; coefN20_1 = 0.23;coefN20_2 = 0.077; landClassUnman=NULL;compHarvX = 0;P0currclim=NA;fT0=NA;TminTmax = NA;toRaster=F; disturbanceON = NA; ingrowth = F; clcut = 1
 
-  if(!fmi_from_allas){
-    rcps = "CurrClim"; harvScen="Base"; harvInten="Base"; forceSaveInitSoil=T
+  #if(!fmi_from_allas){
+  #  rcps = "CurrClim"; harvScen="Base"; harvInten="Base"; forceSaveInitSoil=T
     out <- runModelAdapt(1,sampleID=1, outType = outType, rcps = "CurrClim", 
                          harvScen="Base", 
                          harvInten="Base", forceSaveInitSoil=T)
-  } else {
-    out_fmi <- runModelAdapt(1,sampleID=1, outType = outType, rcps = "CurrClim_fmi", harvScen="Base", harvInten="Base",forceSaveInitSoil=T)
-  }
+  #} else {
+  #  out_fmi <- runModelAdapt(1,sampleID=1, outType = outType, rcps = "CurrClim_fmi", harvScen="Base", harvInten="Base",forceSaveInitSoil=T)
+  #}
   #  sampleIDs <- 1:length(ops)
   #  lapply(sampleIDs, 
   #         function(jx) { 
@@ -767,6 +768,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   w_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","expected_sim","simulation")))
   probs_segm <- array(0,c(length(years),6),dimnames = list(years,c("min_pw_decl_segm","pw_median_decl","pw_median_decl/median_all",
                                                                    "min_pbb_decl_segm","pbb_median_decl","pbb_median_decl/median_all")))
+  
+  ti <- 1
   for(ti in 1:length(years)){
     yeari <- years[ti]
     nibb <- which(ops[[1]]$forestdamagequalifier=="1602" & as.numeric(ops[[1]]$dam_year)==yeari)
@@ -778,8 +781,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
     probs_segm[ti,1:3] <- c(min(pw[niw]),median(pw[niw]),
                          median(pw[niw])/median(pw[setdiff(1:nSegs,niw)]))}
     if(length(nibb)>0){
-    probs_segm[ti,4:6] <- c(min(pbb[nibb]),median(pbb[ni]),
-                         median(pbb[ni])/median(pbb[setdiff(1:nSegs,nibb)]))}
+    probs_segm[ti,4:6] <- c(min(pbb[nibb]),median(pbb[nibb]),
+                         median(pbb[nibb])/median(pbb[setdiff(1:nSegs,nibb)]))}
     bb_dam_area[ti,] <- c(sum(ops[[1]]$area[which(ops[[1]]$forestdamagequalifier=="1602" &
                                                     as.numeric(ops[[1]]$dam_year)==yeari)]),
                           sum(sampleXs$region$multiOut[,yeari-2015,"Rh/SBBpob[layer_1]",1,2]*ops[[1]]$area),
