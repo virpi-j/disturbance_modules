@@ -600,7 +600,8 @@ calculateOPSdata  <-  function(r_noi, neighborIDs=T, weighted = T){
   
 }
 
-ij <- 4
+ij <- 1
+#fmi_from_allas <- F
 if(!exists("fmi_from_allas")) fmi_from_allas <- T
 if(!exists("weighted")) weighted <- F
 calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
@@ -662,6 +663,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
     rm(list = setdiff(ls(), toMemFmi))
     gc()
   }
+  setwd(workdir)
   
   # PREBAS runs
   source("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Settings_IBCCarbon.R", local=T)  
@@ -691,8 +693,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   deltaID=1; sampleID=1; climScen=0; easyInit=FALSE; CO2fixed=0;forceSaveInitSoil=F; cons10run = F; procDrPeat=F;coeffPeat1=-240;coeffPeat2=70;coefCH4 = 0.34; coefN20_1 = 0.23;coefN20_2 = 0.077; landClassUnman=NULL;compHarvX = 0;P0currclim=NA;fT0=NA;TminTmax = NA;toRaster=F; disturbanceON = NA; ingrowth = F; clcut = 1
 
   #if(!fmi_from_allas){
-  #  rcps = "CurrClim"; harvScen="Base"; harvInten="Base"; forceSaveInitSoil=T
-    out <- runModelAdapt(1,sampleID=1, outType = outType, rcps = "CurrClim", 
+    rcps0 = "CurrClim"; harvScen="Base"; harvInten="Base"; forceSaveInitSoil=T
+    out <- runModelAdapt(1,sampleID=1, outType = outType, rcps = rcps0, 
                          harvScen="Base", 
                          harvInten="Base", forceSaveInitSoil=T)
   #} else {
@@ -707,7 +709,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   #           gc()
   #         })
   print(paste("SBB area",sum(ops[[1]]$area[which(ops[[1]]$forestdamagequalifier=="1602")])))
-    
+  if(fmi_from_allas) rcps <- "CurrClim_fmi"
   nYears <<- 2024-2015
   ops <<- list(dataS)#list(dataS[,..cols_in_prebas])
   endingYear <<- nYears + startingYear
