@@ -7,7 +7,7 @@ toFile <- F
 asParallel <- F
 if(neighborIDs) asParallel <- T
 if(!exists("toFile")) toFile <- T
-nSegs <- 20000
+nSegs <- 10000
 if(toFile) nSegs <- 20000
 ttAll <- T # T = Add data outside forest declarations to the simulations
 
@@ -809,7 +809,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
 }
 
 #calculateStatistics(1, fmi_from_allas = fmi_from_allas, weighted = F)
-output_stats <- lapply(1:length(rids[1:2]), function(jx) {
+output_stats <- lapply(1:length(rids), function(jx) {
   #     print(paste0("region list: ",which(rids==20),"/",length(rids)))
   calculateStatistics(jx, fmi_from_allas = fmi_from_allas, weighted = F)
 })      
