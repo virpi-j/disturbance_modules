@@ -7,7 +7,7 @@ toFile <- F
 asParallel <- F
 if(neighborIDs) asParallel <- T
 if(!exists("toFile")) toFile <- T
-nSegs <- 20000
+nSegs <- 1000
 if(toFile) nSegs <- 20000
 ttAll <- T # T = Add data outside forest declarations to the simulations
 
@@ -803,6 +803,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   print(paste("Region",r_no,"/",regnames[r_noi],": decl segment probabilities"))
   print(probs_segm)
   out <- list(bb_dam_area,w_dam_area,probs_segm,regnames[r_noi])
+  save(out, file = paste0("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Results/validation_stats_rno",r_no,".rdata"))
   return(out)
   rm(list=setdiff(ls(),c(toMem,"out")))
   gc()
