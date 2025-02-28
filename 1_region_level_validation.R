@@ -42,6 +42,7 @@ ContinueIterations <- F
 #r_noi <- r_no
 rnos <- c(1:8,8:19)
 rids <- rids0 <- c(1,3:length(rnos))
+rids <- rids0 <- rids[8:length(rnos)]
 #rids0 <- c(20,19,8,17,7)
 #rids0 <- c(6,18,4,9,13)
 #rids0 <- c(12,15,5,10,11)
