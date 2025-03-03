@@ -1,5 +1,5 @@
-#rm(list=ls())
-#gc()
+rm(list=ls())
+gc()
 if(dev.interactive()) dev.off()
 outType <- "testRun"
 neighborIDs <- T
@@ -7,8 +7,8 @@ toFile <- F
 asParallel <- F
 if(neighborIDs) asParallel <- T
 if(!exists("toFile")) toFile <- T
-nSegs <- 1000
-if(toFile) nSegs <- 20000
+nSegs <- 20000
+if(toFile) nSegs <- 40000
 ttAll <- T # T = Add data outside forest declarations to the simulations
 
 set.seed(1)
@@ -42,7 +42,7 @@ ContinueIterations <- F
 #r_noi <- r_no
 rnos <- c(1:8,8:19)
 rids <- rids0 <- c(1,3:length(rnos))
-rids <- rids0 <- rids[8:length(rnos)]
+#rids <- rids0 <- rids[8:length(rnos)]
 #rids0 <- c(20,19,8,17,7)
 #rids0 <- c(6,18,4,9,13)
 #rids0 <- c(12,15,5,10,11)
@@ -66,7 +66,7 @@ dam_names <- c("alldeclarations","all","SBB","wind","fire","moose")
 dam_indexs <- c("all","0","1602","1504","1503","1650")
 
 inds <- 1
-calculateOPSdata  <-  function(r_noi, neighborIDs=T, weighted = T){
+calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
   toMem <- ls()
   r_no <- rnos[r_noi]
   
@@ -88,11 +88,10 @@ calculateOPSdata  <-  function(r_noi, neighborIDs=T, weighted = T){
   tt[,birch:= birch/ttsum]
   tt[ttsum==0,c("pine","spruce","birch")]<-0
   XYdamages <- tt
+  gc()
   
   # PREBAS run for a sample
   landClassX <- 1:2
-  #print(r_no)
-  
   #    devtools::source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/finRuns/Rsrc/settings.r")
   source("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Settings_IBCCarbon.R", local=TRUE)  
   vars_to_prebas <- colnames(data.all)
@@ -110,35 +109,35 @@ calculateOPSdata  <-  function(r_noi, neighborIDs=T, weighted = T){
   
   if(weighted) tt <- tt[tt$dam_year>=2019,]
   tt <- tt[segID%in%data.all$segID,] # some damage polygons are outside the landclasses 1:2
-  #tt[,climID:=data.all$climID[match(tt$segID,data.all$segID)]] # cliID from data.all
-  #tt[,cons:=data.all$cons[match(tt$segID,data.all$segID)]] # cons from data.all
+  gc()
   
   not_in_tt <- colnames(data.all)[which(!(colnames(data.all)%in%colnames(tt)))]
   tt <- cbind(tt,data.all[match(tt$segID,data.all$segID),..not_in_tt])
-  #tt[,cons:=data.all$cons[match(tt$segID,data.all$segID)]] # cliID from data.all
-  
+
   #########################
   cuttinginpractise <- c(5, 8, 16, 17, 19, 21, 22, 24)
-  data.allA <- cbind(data.all[c(match(tt$segID,data.all$segID)),],
-                     forestdamagequalifier = tt$forestdamagequalifier,              
-                     cuttingpurpose = tt$cuttingpurpose,              
-                     cuttingrealizationpractice = tt$cuttingrealizationpractice,
-                     dam_year = tt$dam_year,
-                     damSegId = tt$damSegID,
-                     dam_id = tt$dam_id)
-  data.allA <- tt
+  #data.allA <- cbind(data.all[c(match(tt$segID,data.all$segID)),],
+  #                   forestdamagequalifier = tt$forestdamagequalifier,              
+  #                   cuttingpurpose = tt$cuttingpurpose,              
+  #                   cuttingrealizationpractice = tt$cuttingrealizationpractice,
+  #                   dam_year = tt$dam_year,
+  #                   damSegId = tt$damSegID,
+  #                   dam_id = tt$dam_id)
+  #data.allA <- tt
   yrs <- 2019:2023
   #c(5,#avohakkuu
   #                       22) #hyonteistuhoalue, uudistamishakkuu
   
-  areasDamClct <- function(x,id) sum(data.allA$area[which(data.allA$forestdamagequalifier==id & data.allA$dam_year==x  & data.allA$cuttingrealizationpractice%in%cuttinginpractise)])
-  areasDam <- function(x,id) sum(data.allA$area[which(data.allA$forestdamagequalifier==id & data.allA$dam_year==x)])
+  areasDamClct <- function(x,id) sum(tt$area[which(tt$forestdamagequalifier==id & tt$dam_year==x  & tt$cuttingrealizationpractice%in%cuttinginpractise)])
+  areasDam <- function(x,id) sum(tt$area[which(tt$forestdamagequalifier==id & tt$dam_year==x)])
+#  areasDamClct <- function(x,id) sum(data.allA$area[which(data.allA$forestdamagequalifier==id & data.allA$dam_year==x  & data.allA$cuttingrealizationpractice%in%cuttinginpractise)])
+ # areasDam <- function(x,id) sum(data.allA$area[which(data.allA$forestdamagequalifier==id & data.allA$dam_year==x)])
   
   damInfo <- array(0,c(8,length(yrs)),
                    dimnames = list(c("alldeclarea","alldeclclctarea","SBBarea","SBBclctarea","windarea",
                                      "windclctarea","fireclctarea","firearea"),paste0("Year",yrs)))
-  for(y in 1:length(yrs)) damInfo[1,y] <- sum(data.allA$area[which(data.allA$dam_year==yrs[y])])
-  for(y in 1:length(yrs)) damInfo[2,y] <- sum(data.allA$area[which(data.allA$dam_year==yrs[y] & data.allA$cuttingrealizationpractice%in%cuttinginpractise)])
+  for(y in 1:length(yrs)) damInfo[1,y] <- sum(tt$area[which(tt$dam_year==yrs[y])])
+  for(y in 1:length(yrs)) damInfo[2,y] <- sum(tt$area[which(tt$dam_year==yrs[y] & tt$cuttingrealizationpractice%in%cuttinginpractise)])
   for(y in 1:length(yrs)) damInfo[3,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="SBB")])
   for(y in 1:length(yrs)) damInfo[4,y] <- areasDamClct(yrs[y],dam_indexs[which(dam_names=="SBB")])
   for(y in 1:length(yrs)) damInfo[5,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="wind")])
@@ -188,11 +187,12 @@ calculateOPSdata  <-  function(r_noi, neighborIDs=T, weighted = T){
     tabX <- merge(data.IDs,data.all) # coords of the segments in sample outside declarations
     x <- tabX$x[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
     y <- tabX$y[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
-    
+    rm("tabX"); gc()
     xybb <- array(0,c(nrow(XYdamages),2))  
     xybb[,1] <- XYdamages$x
     xybb[,2] <- XYdamages$y
     xx <- bbox(xybb)
+    rm("xybb"); gc()
     if(r_no == 8){ 
       yLappiEP <- xx[2,2] 
       data.all <- data.all[y<=yLappiEP,]
@@ -249,8 +249,8 @@ calculateOPSdata  <-  function(r_noi, neighborIDs=T, weighted = T){
     gc()
     
   } else {
-    tt_names_in <- which(colnames(tt)%in%colnames(data.all))
-    dataAll_names_in <- which(colnames(data.all)%in%colnames(tt))
+    tt_names_in <- which(colnames(tt)%in%vars_to_prebas)
+    dataAll_names_in <- which(vars_to_prebas%in%colnames(tt))
     
     tmp_inds <- 1:(nrow(tt)+nrow(data.all))
     ni <- sample(1:length(tmp_inds), nSegs, replace=F)
@@ -260,14 +260,14 @@ calculateOPSdata  <-  function(r_noi, neighborIDs=T, weighted = T){
     #rrows_decl <- which((tmp$segID %in% tt$segID))# niAll
     rrows_sample <- setdiff(1:length(ni), rrows_decl)
     #rrows_sample <- which(!(tmp$segID %in% tt$segID))# niAll
-
+    gc()
     setkey(tmp,segID)
     tabX <- merge(data.IDs,tmp) # coords of the segments in sample outside declarations
     x <- tabX$x[match(tmp$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
     y <- tabX$y[match(tmp$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
     tmp[,x:=x]
     tmp[,y:=y]
-    
+    rm(list=c("x","y","tabX")); gc()
     #tt2 <- data.table(matrix(NA,nrow = length(rrows_sample),ncol = ncol(tt)))
     #colnames(tt2) <- colnames(tt)
     #tt2$forestdamagequalifier = 0
@@ -302,6 +302,7 @@ calculateOPSdata  <-  function(r_noi, neighborIDs=T, weighted = T){
     #dataS <- tt[match(tt$segID[rrows],tmp$segID[rrows_decl]),]
     
     dataS <- tmp
+    rm("tmp"); gc()
   }
   #  load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
   #  data.IDs$segID <- data.IDs$maakuntaID
@@ -605,130 +606,141 @@ ij <- 1
 #fmi_from_allas <- F
 if(!exists("fmi_from_allas")) fmi_from_allas <- T
 if(!exists("weighted")) weighted <- F
+
 calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   set.seed(1)
   toMem <- ls()
   r_noi <- rids[ij]
   r_no <- rnos[r_noi]
   
-  sample <- calculateOPSdata(r_noi,neighborIDs = F, weighted = weighted)
+  sample <- calculateOPSdata(r_noi,nSegs = nSegs, neighborIDs = F, weighted = weighted)
+
   dataS <- sample$dataS
   cols_in_prebas <- which(colnames(dataS)%in%c(sample$vars_to_prebas,"x","y"))
-  ops <<- list(dataS)#list(dataS[,..cols_in_prebas])
-  
-  setwd("/scratch/project_2000994/PREBASruns/PREBAStesting/")
-  
-  print(paste("Region",r_no))
-  print(paste("SBB area",sum(ops[[1]]$area[which(dataS$forestdamagequalifier=="1602")])))
-
-  print(fmi_from_allas)
-  # fmi data from allas
-  if(fmi_from_allas){
-    toMemFmi <- ls()
-    source("0.5_get_fmi_from_allas.R")
-    repo <- "ForModLabUHel/fmi.weather.finland"
-    file_path <- "r/init_setup.R"
-    branch <- "main"
-    # Get init functions from github
-    init_funs <- fetch_file_from_github(repo, file_path, branch)
-    eval(parse(text = init_funs))
-    rm(init_funs, file_path, repo)
-    # SET PARAMETERS
-    resolution <- 1 # Resolution in km (1, 5 or 9)
-    years <- c(2015:2024) # For which years to extract (1961:2023 are full years)
-    save_path <- paste0(getwd()) # Where to save the extracted data.table as .rdata
-    repo_url <- "https://github.com/ForModLabUHel/fmi.weather.finland.git" # Project repository to use
-    format_to_prebas <- T # TRUE for Prebas format, FALSE for raw data. Default is TRUE.
-    
-    req_coords_dt <- data.table(
-      id = 1:nrow(ops[[1]]),
-      E = ops[[1]]$x,
-      N = ops[[1]]$y
-    )
-    req_coords <- as.matrix(req_coords_dt[, c("E", "N")]) # The coords are passed as a matrix
-    
-    # Set parameters
-    params <- list(req_coords = req_coords, resolution = resolution, years = years)
-    
-    # Combine arguments
-    setup_and_run_args <- c(params, list(save_path = save_path, repo_url = repo_url, format_to_prebas = format_to_prebas))
-    
-    # RUN
-    result <- do.call(setup_and_run, setup_and_run_args)
-    
-    # Change file name
-    file.rename(list.files(path=workdir, pattern="fmi_vars_", all.files=FALSE,full.names=FALSE)[1],
-                "fmi_vars_PREBAS.rdata")
-    file.rename(list.files(path=workdir, pattern="climID_lookup_", all.files=FALSE,full.names=FALSE)[1],
-                "climID_lookup.rdata")
-    rm(list = setdiff(ls(), toMemFmi))
-    gc()
-  }
-  setwd(workdir)
-  
+  rm("sample")
+  gc()
   # PREBAS runs
   source("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Settings_IBCCarbon.R", local=T)  
   area_tot <<- sum(data.all$area)
-  #rm(list="data.all")
-  #gc()
-  climatepath_orig = "/scratch/project_2000994/RCP/"
-  station_id <- "tmp"
-  climScen <- 0
-  nSegs <- nrow(ops[[1]])
-  print(paste("Spruce = 0 segments", length(which(dataS$spruce==0 & dataS$ba==0))))
-  print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
+  rm(list="data.all")
+  gc()
   
-  rcps <- "CurrClim"
-  if(fmi_from_allas) rcps <- "CurrClim_fmi"
-  #    source_url("https://raw.githubusercontent.com/virpi-j/adaptFirst_runs/master/functions.R")
-  #source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/general/functions.r")
-  source("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/functions_IBSCarbon.R", local=T)
-  source("~/adaptFirst_runs/functions.R", local=T)
-  #source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/general/functions.r")
-  mortMod <<- 1
-  nYears <<- 2050-2015
-  endingYear <<- nYears + startingYear
-  byManual <- T
-  mortMod <<- 1
-  
-  deltaID=1; sampleID=1; climScen=0; easyInit=FALSE; CO2fixed=0;forceSaveInitSoil=F; cons10run = F; procDrPeat=F;coeffPeat1=-240;coeffPeat2=70;coefCH4 = 0.34; coefN20_1 = 0.23;coefN20_2 = 0.077; landClassUnman=NULL;compHarvX = 0;P0currclim=NA;fT0=NA;TminTmax = NA;toRaster=F; disturbanceON = NA; ingrowth = F; clcut = 1
-
-  #if(!fmi_from_allas){
+  #nsets <- 1
+  #setSize <- 5000
+  #if(nSegs> setSize) nsets <- ceiling(nSegs/setSize)
+  #isets <- 1
+  #for(isets in 1:nsets){
+  #  ops <<- list(dataS[((isets-1)*setSize+1):min((setSize*isets),nSegs),])#list(dataS[,..cols_in_prebas])
+    ops <<- list(dataS)
+    setwd("/scratch/project_2000994/PREBASruns/PREBAStesting/")
+    
+    print(paste("Region",r_no))
+    print(paste("SBB area",sum(ops[[1]]$area[which(dataS$forestdamagequalifier=="1602")])))
+    
+    print(fmi_from_allas)
+    # fmi data from allas
+    if(fmi_from_allas){
+      toMemFmi <- ls()
+      source("0.5_get_fmi_from_allas.R")
+      repo <- "ForModLabUHel/fmi.weather.finland"
+      file_path <- "r/init_setup.R"
+      branch <- "main"
+      # Get init functions from github
+      init_funs <- fetch_file_from_github(repo, file_path, branch)
+      eval(parse(text = init_funs))
+      rm(init_funs, file_path, repo)
+      # SET PARAMETERS
+      resolution <- 1 # Resolution in km (1, 5 or 9)
+      years <- c(2015:2024) # For which years to extract (1961:2023 are full years)
+      save_path <- paste0(getwd()) # Where to save the extracted data.table as .rdata
+      repo_url <- "https://github.com/ForModLabUHel/fmi.weather.finland.git" # Project repository to use
+      format_to_prebas <- T # TRUE for Prebas format, FALSE for raw data. Default is TRUE.
+      
+      req_coords_dt <- data.table(
+        id = 1:nrow(ops[[1]]),
+        E = ops[[1]]$x,
+        N = ops[[1]]$y
+      )
+      req_coords <- as.matrix(req_coords_dt[, c("E", "N")]) # The coords are passed as a matrix
+      
+      # Set parameters
+      params <- list(req_coords = req_coords, resolution = resolution, years = years)
+      
+      # Combine arguments
+      setup_and_run_args <- c(params, list(save_path = save_path, repo_url = repo_url, format_to_prebas = format_to_prebas))
+      
+      # RUN
+      result <- do.call(setup_and_run, setup_and_run_args)
+      
+      # Change file name
+      file.rename(list.files(path=workdir, pattern="fmi_vars_", all.files=FALSE,full.names=FALSE)[1],
+                  "fmi_vars_PREBAS.rdata")
+      file.rename(list.files(path=workdir, pattern="climID_lookup_", all.files=FALSE,full.names=FALSE)[1],
+                  "climID_lookup.rdata")
+      rm(list = setdiff(ls(), toMemFmi))
+      gc()
+    }
+    setwd(workdir)
+    
+    climatepath_orig = "/scratch/project_2000994/RCP/"
+    station_id <- "tmp"
+    climScen <- 0
+    nSegs <- nrow(ops[[1]])
+    print(paste("Spruce = 0 segments", length(which(dataS$spruce==0 & dataS$ba==0))))
+    print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
+    
+    rcps <- "CurrClim"
+    if(fmi_from_allas) rcps <- "CurrClim_fmi"
+    #    source_url("https://raw.githubusercontent.com/virpi-j/adaptFirst_runs/master/functions.R")
+    #source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/general/functions.r")
+    source("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/functions_IBSCarbon.R", local=T)
+    source("~/adaptFirst_runs/functions.R", local=T)
+    #source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/general/functions.r")
+    mortMod <<- 1
+    nYears <<- 2050-2015
+    endingYear <<- nYears + startingYear
+    byManual <- T
+    mortMod <<- 1
+    
+    deltaID=1; sampleID=1; climScen=0; easyInit=FALSE; CO2fixed=0;forceSaveInitSoil=F; cons10run = F; procDrPeat=F;coeffPeat1=-240;coeffPeat2=70;coefCH4 = 0.34; coefN20_1 = 0.23;coefN20_2 = 0.077; landClassUnman=NULL;compHarvX = 0;P0currclim=NA;fT0=NA;TminTmax = NA;toRaster=F; disturbanceON = NA; ingrowth = F; clcut = 1
+    
+    #if(!fmi_from_allas){
     rcps0 = "CurrClim"; harvScen="Base"; harvInten="Base"; forceSaveInitSoil=T
     out <- runModelAdapt(1,sampleID=1, outType = outType, rcps = rcps0, 
                          harvScen="Base", 
                          harvInten="Base", forceSaveInitSoil=T)
-  #} else {
-  #  out_fmi <- runModelAdapt(1,sampleID=1, outType = outType, rcps = "CurrClim_fmi", harvScen="Base", harvInten="Base",forceSaveInitSoil=T)
-  #}
-  #  sampleIDs <- 1:length(ops)
-  #  lapply(sampleIDs, 
-  #         function(jx) { 
-  #           runModelAdapt(1,sampleID=jx, outType = outType, rcps = "CurrClim_fmi",
-  #                         harvScen="Base", harvInten="Base",
-  #                         forceSaveInitSoil=T)
-  #           gc()
-  #         })
-  print(paste("SBB area",sum(ops[[1]]$area[which(ops[[1]]$forestdamagequalifier=="1602")])))
-  if(fmi_from_allas) rcps <- "CurrClim_fmi"
-  nYears <<- 2024-2015
-  ops <<- list(dataS)#list(dataS[,..cols_in_prebas])
-  endingYear <<- nYears + startingYear
-  clcuts <<- 1
-  disturbanceON <- c("fire","wind","bb")
-  source("~/adaptFirst_runs/functions.R", local=T)
-  sampleXs <- runModelAdapt(1,sampleID=1, outType = outType, rcps = rcps, 
-                            disturbanceON = disturbanceON, 
-                            harvScen="NoHarv", harvInten="NoHarv")
-  #sampleXs0 <- lapply(sampleIDs, 
-  #                    function(jx) { 
-  #                      runModelAdapt(1,sampleID = jx, outType=outType,  
-  #                                    harvScen="NoHarv",rcps = rcps, # clcut = clcuts,
-  #                                    harvInten="NoHarv")
-  #                      #ingrowth = T, 
-  #                      #clcut = -1, disturbanceON = disturbanceON)
-  #                    })
+    #} else {
+    #  out_fmi <- runModelAdapt(1,sampleID=1, outType = outType, rcps = "CurrClim_fmi", harvScen="Base", harvInten="Base",forceSaveInitSoil=T)
+    #}
+    #  sampleIDs <- 1:length(ops)
+    #  lapply(sampleIDs, 
+    #         function(jx) { 
+    #           runModelAdapt(1,sampleID=jx, outType = outType, rcps = "CurrClim_fmi",
+    #                         harvScen="Base", harvInten="Base",
+    #                         forceSaveInitSoil=T)
+    #           gc()
+    #         })
+    print(paste("SBB area",sum(ops[[1]]$area[which(ops[[1]]$forestdamagequalifier=="1602")])))
+    if(fmi_from_allas) rcps <- "CurrClim_fmi"
+    nYears <<- 2024-2015
+    ops <<- list(dataS)#list(dataS[,..cols_in_prebas])
+    endingYear <<- nYears + startingYear
+    clcuts <<- 1
+    disturbanceON <- c("fire","wind","bb")
+    source("~/adaptFirst_runs/functions.R", local=T)
+    sampleXs <- runModelAdapt(1,sampleID=1, outType = outType, rcps = rcps, 
+                              disturbanceON = disturbanceON, 
+                              harvScen="NoHarv", harvInten="NoHarv")
+    #sampleXs0 <- lapply(sampleIDs, 
+    #                    function(jx) { 
+    #                      runModelAdapt(1,sampleID = jx, outType=outType,  
+    #                                    harvScen="NoHarv",rcps = rcps, # clcut = clcuts,
+    #                                    harvInten="NoHarv")
+    #                      #ingrowth = T, 
+    #                      #clcut = -1, disturbanceON = disturbanceON)
+    #                    })
     
+  #}    
   ops <- list(dataS)
   print(paste("SBB area",sum(ops[[1]]$area[which(ops[[1]]$forestdamagequalifier=="1602")])))
   print("SMIs:")
@@ -739,7 +751,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   print(sampleXs$region$multiOut[1,,"W_wsap/fireRisk[layer_1]",1,2])
   print("windprob:")
   print(sampleXs$region$outDist[1,,"wrisk"])
-
+  
   # SBB simulated damage segments
   #SBBReactionBA <-  apply(sampleXs$region$multiOut[,,"grossGrowth/bb BA disturbed",,2],1:2,sum)
   SBBReactionBA <-  apply(sampleXs$region$multiOut[,,43,,2],1:2,sum)
