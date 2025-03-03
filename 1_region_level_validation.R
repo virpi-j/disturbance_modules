@@ -1,6 +1,8 @@
 rm(list=ls())
 gc()
 if(dev.interactive()) dev.off()
+fmi_from_allas <- T
+weighted <- F
 outType <- "testRun"
 neighborIDs <- T
 toFile <- F
