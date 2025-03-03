@@ -1,5 +1,5 @@
-rm(list=ls())
-gc()
+#rm(list=ls())
+#gc()
 if(dev.interactive()) dev.off()
 if(!exists("fmi_from_allas")) fmi_from_allas <- F
 if(!exists("weighted")) weighted <- F
