@@ -761,7 +761,9 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   BA <- apply(sampleXs$region$multiOut[,,"BA",,1],1:2,sum)
   Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
   Vrw <- cbind(Vrw,Vrw[,ncol(Vrw)])
-  
+  Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)[,-1]
+  Ven <- cbind(Ven,Ven[,ncol(Ven)])
+  Vrw <- Vrw+Ven
   ## wind
   # all segment areas as initial values for the damages
   areaSamplew <- array(ops[[1]]$area,c(dim(SBBReactionBA))) # Segment areas where damage happened
@@ -769,7 +771,9 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   #areaSamplebb[SBBReactionBA>0 & Vrw==0] <- areaSamplebb[SBBReactionBA>0 & Vrw==0]*
   #  SBBReactionBA[SBBReactionBA>0 & Vrw==0]/BA[SBBReactionBA>0 & Vrw==0] # if no clearcut, only part of area damaged
   areaSamplew[BA==0] <- 0 # if no basal area, no damaged area
-
+  areaSamplewHarv <- areaSamplew
+  areaSamplewHarv[sampleXs$region$outDist[,,"salvlog"]==0] <- 0
+  
   ## bb  
   # all segment areas as initial values for the damages
   areaSamplebb <- array(ops[[1]]$area,c(dim(SBBReactionBA))) # Segment areas where damage happened
@@ -777,12 +781,14 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   #areaSamplebb[SBBReactionBA>0 & Vrw==0] <- areaSamplebb[SBBReactionBA>0 & Vrw==0]*
   #  SBBReactionBA[SBBReactionBA>0 & Vrw==0]/BA[SBBReactionBA>0 & Vrw==0] # if no clearcut, only part of area damaged
   areaSamplebb[BA==0] <- 0 # if no basal area, no damaged area
+  areaSamplebbHarv <- areaSamplebb
+  areaSamplebbHarv[Vrw==0] <- 0
   ##
     
   years <- (startingYear+1):endingYear
   years <- years[years>2018 & years<2024]
-  bb_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","expected_sim","simulation")))
-  w_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","expected_sim","simulation")))
+  bb_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","sim_harvested","sim_all")))
+  w_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","sim_harvested","sim_all")))
   probs_segm <- array(0,c(length(years),6),dimnames = list(years,c("min_pw_decl_segm","pw_median_decl","pw_median_decl/median_all",
                                                                    "min_pbb_decl_segm","pbb_median_decl","pbb_median_decl/median_all")))
   
@@ -802,11 +808,13 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
                          median(pbb[nibb])/median(pbb[setdiff(1:nSegs,nibb)]))}
     bb_dam_area[ti,] <- c(sum(ops[[1]]$area[which(ops[[1]]$forestdamagequalifier=="1602" &
                                                     as.numeric(ops[[1]]$dam_year)==yeari)]),
-                          sum(sampleXs$region$multiOut[,yeari-2015,"Rh/SBBpob[layer_1]",1,2]*ops[[1]]$area),
+                          #sum(sampleXs$region$multiOut[,yeari-2015,"Rh/SBBpob[layer_1]",1,2]*ops[[1]]$area),
+                          sum(areaSamplebbHarv[,yeari-2015]),
                           sum(areaSamplebb[,yeari-2015]))
     w_dam_area[ti,] <- c(sum(ops[[1]]$area[which(ops[[1]]$forestdamagequalifier=="1504" &
                                                     as.numeric(ops[[1]]$dam_year)==yeari)]),
-                          sum(sampleXs$region$outDist[1,yeari-2015,"wrisk"]*ops[[1]]$area),
+                          #sum(sampleXs$region$outDist[1,yeari-2015,"wrisk"]*ops[[1]]$area),
+                         sum(areaSamplewHarv[,yeari-2015]),
                           sum(areaSamplew[,yeari-2015]))
   }
   print(paste("Region",r_no,"/",regnames[r_noi],": bb damaged segment area"))
