@@ -9,7 +9,7 @@ toFile <- F
 asParallel <- F
 if(neighborIDs) asParallel <- T
 if(!exists("toFile")) toFile <- T
-nSegs <- 20000
+nSegs <- 30000
 if(toFile) nSegs <- 40000
 ttAll <- T # T = Add data outside forest declarations to the simulations
 
@@ -45,7 +45,7 @@ ContinueIterations <- F
 rnos <- c(1:8,8:19)
 rids <- rids0 <- c(1,3:length(rnos))
 #rids <- rids0 <- rids[10:length(rnos)]
-rids <- rids0 <- rids[7:8]
+#rids <- rids0 <- rids[7:8]
 #rids0 <- c(20,19,8,17,7)
 #rids0 <- c(6,18,4,9,13)
 #rids0 <- c(12,15,5,10,11)
@@ -611,7 +611,7 @@ if(!exists("fmi_from_allas")) fmi_from_allas <- T
 if(!exists("weighted")) weighted <- F
 
 calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
-  set.seed(1)
+  set.seed(10)
   toMem <- ls()
   r_noi <- rids[ij]
   r_no <- rnos[r_noi]
@@ -634,115 +634,115 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   #isets <- 1
   #for(isets in 1:nsets){
   #  ops <<- list(dataS[((isets-1)*setSize+1):min((setSize*isets),nSegs),])#list(dataS[,..cols_in_prebas])
-    ops <<- list(dataS)
-    setwd("/scratch/project_2000994/PREBASruns/PREBAStesting/")
+  ops <<- list(dataS)
+  setwd("/scratch/project_2000994/PREBASruns/PREBAStesting/")
+  
+  print(paste("Region",r_no))
+  print(paste("SBB area",sum(ops[[1]]$area[which(dataS$forestdamagequalifier=="1602")])))
+  
+  print(fmi_from_allas)
+  # fmi data from allas
+  if(fmi_from_allas){
+    toMemFmi <- ls()
+    source("0.5_get_fmi_from_allas.R")
+    repo <- "ForModLabUHel/fmi.weather.finland"
+    file_path <- "r/init_setup.R"
+    branch <- "main"
+    # Get init functions from github
+    init_funs <- fetch_file_from_github(repo, file_path, branch)
+    eval(parse(text = init_funs))
+    rm(init_funs, file_path, repo)
+    # SET PARAMETERS
+    resolution <- 1 # Resolution in km (1, 5 or 9)
+    years <- c(2015:2024) # For which years to extract (1961:2023 are full years)
+    save_path <- paste0(getwd()) # Where to save the extracted data.table as .rdata
+    repo_url <- "https://github.com/ForModLabUHel/fmi.weather.finland.git" # Project repository to use
+    format_to_prebas <- T # TRUE for Prebas format, FALSE for raw data. Default is TRUE.
     
-    print(paste("Region",r_no))
-    print(paste("SBB area",sum(ops[[1]]$area[which(dataS$forestdamagequalifier=="1602")])))
+    req_coords_dt <- data.table(
+      id = 1:nrow(ops[[1]]),
+      E = ops[[1]]$x,
+      N = ops[[1]]$y
+    )
+    req_coords <- as.matrix(req_coords_dt[, c("E", "N")]) # The coords are passed as a matrix
     
-    print(fmi_from_allas)
-    # fmi data from allas
-    if(fmi_from_allas){
-      toMemFmi <- ls()
-      source("0.5_get_fmi_from_allas.R")
-      repo <- "ForModLabUHel/fmi.weather.finland"
-      file_path <- "r/init_setup.R"
-      branch <- "main"
-      # Get init functions from github
-      init_funs <- fetch_file_from_github(repo, file_path, branch)
-      eval(parse(text = init_funs))
-      rm(init_funs, file_path, repo)
-      # SET PARAMETERS
-      resolution <- 1 # Resolution in km (1, 5 or 9)
-      years <- c(2015:2024) # For which years to extract (1961:2023 are full years)
-      save_path <- paste0(getwd()) # Where to save the extracted data.table as .rdata
-      repo_url <- "https://github.com/ForModLabUHel/fmi.weather.finland.git" # Project repository to use
-      format_to_prebas <- T # TRUE for Prebas format, FALSE for raw data. Default is TRUE.
-      
-      req_coords_dt <- data.table(
-        id = 1:nrow(ops[[1]]),
-        E = ops[[1]]$x,
-        N = ops[[1]]$y
-      )
-      req_coords <- as.matrix(req_coords_dt[, c("E", "N")]) # The coords are passed as a matrix
-      
-      # Set parameters
-      params <- list(req_coords = req_coords, resolution = resolution, years = years)
-      
-      # Combine arguments
-      setup_and_run_args <- c(params, list(save_path = save_path, repo_url = repo_url, format_to_prebas = format_to_prebas))
-      
-      # RUN
-      result <- do.call(setup_and_run, setup_and_run_args)
-      
-      # Change file name
-      file.rename(list.files(path=workdir, pattern="fmi_vars_", all.files=FALSE,full.names=FALSE)[1],
-                  "fmi_vars_PREBAS.rdata")
-      file.rename(list.files(path=workdir, pattern="climID_lookup_", all.files=FALSE,full.names=FALSE)[1],
-                  "climID_lookup.rdata")
-      rm(list = setdiff(ls(), toMemFmi))
-      gc()
-    }
-    setwd(workdir)
+    # Set parameters
+    params <- list(req_coords = req_coords, resolution = resolution, years = years)
     
-    climatepath_orig = "/scratch/project_2000994/RCP/"
-    station_id <- "tmp"
-    climScen <- 0
-    nSegs <- nrow(ops[[1]])
-    print(paste("Spruce = 0 segments", length(which(dataS$spruce==0 & dataS$ba==0))))
-    print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
+    # Combine arguments
+    setup_and_run_args <- c(params, list(save_path = save_path, repo_url = repo_url, format_to_prebas = format_to_prebas))
     
-    rcps <- "CurrClim"
-    if(fmi_from_allas) rcps <- "CurrClim_fmi"
-    #    source_url("https://raw.githubusercontent.com/virpi-j/adaptFirst_runs/master/functions.R")
-    #source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/general/functions.r")
-    source("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/functions_IBSCarbon.R", local=T)
-    source("~/adaptFirst_runs/functions.R", local=T)
-    #source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/general/functions.r")
-    mortMod <<- 1
-    nYears <<- 2050-2015
-    endingYear <<- nYears + startingYear
-    byManual <- T
-    mortMod <<- 1
+    # RUN
+    result <- do.call(setup_and_run, setup_and_run_args)
     
-    deltaID=1; sampleID=1; climScen=0; easyInit=FALSE; CO2fixed=0;forceSaveInitSoil=F; cons10run = F; procDrPeat=F;coeffPeat1=-240;coeffPeat2=70;coefCH4 = 0.34; coefN20_1 = 0.23;coefN20_2 = 0.077; landClassUnman=NULL;compHarvX = 0;P0currclim=NA;fT0=NA;TminTmax = NA;toRaster=F; disturbanceON = NA; ingrowth = F; clcut = 1
-    
-    #if(!fmi_from_allas){
-    rcps0 = "CurrClim"; harvScen="Base"; harvInten="Base"; forceSaveInitSoil=T
-    out <- runModelAdapt(1,sampleID=1, outType = outType, rcps = rcps0, 
-                         harvScen="Base", 
-                         harvInten="Base", forceSaveInitSoil=T)
-    #} else {
-    #  out_fmi <- runModelAdapt(1,sampleID=1, outType = outType, rcps = "CurrClim_fmi", harvScen="Base", harvInten="Base",forceSaveInitSoil=T)
-    #}
-    #  sampleIDs <- 1:length(ops)
-    #  lapply(sampleIDs, 
-    #         function(jx) { 
-    #           runModelAdapt(1,sampleID=jx, outType = outType, rcps = "CurrClim_fmi",
-    #                         harvScen="Base", harvInten="Base",
-    #                         forceSaveInitSoil=T)
-    #           gc()
-    #         })
-    print(paste("SBB area",sum(ops[[1]]$area[which(ops[[1]]$forestdamagequalifier=="1602")])))
-    if(fmi_from_allas) rcps <- "CurrClim_fmi"
-    nYears <<- 2024-2015
-    ops <<- list(dataS)#list(dataS[,..cols_in_prebas])
-    endingYear <<- nYears + startingYear
-    clcuts <<- 1
-    disturbanceON <- c("fire","wind","bb")
-    source("~/adaptFirst_runs/functions.R", local=T)
-    sampleXs <- runModelAdapt(1,sampleID=1, outType = outType, rcps = rcps, 
-                              disturbanceON = disturbanceON, 
-                              harvScen="NoHarv", harvInten="NoHarv")
-    #sampleXs0 <- lapply(sampleIDs, 
-    #                    function(jx) { 
-    #                      runModelAdapt(1,sampleID = jx, outType=outType,  
-    #                                    harvScen="NoHarv",rcps = rcps, # clcut = clcuts,
-    #                                    harvInten="NoHarv")
-    #                      #ingrowth = T, 
-    #                      #clcut = -1, disturbanceON = disturbanceON)
-    #                    })
-    
+    # Change file name
+    file.rename(list.files(path=workdir, pattern="fmi_vars_", all.files=FALSE,full.names=FALSE)[1],
+                "fmi_vars_PREBAS.rdata")
+    file.rename(list.files(path=workdir, pattern="climID_lookup_", all.files=FALSE,full.names=FALSE)[1],
+                "climID_lookup.rdata")
+    rm(list = setdiff(ls(), toMemFmi))
+    gc()
+  }
+  setwd(workdir)
+  
+  climatepath_orig = "/scratch/project_2000994/RCP/"
+  station_id <- "tmp"
+  climScen <- 0
+  nSegs <- nrow(ops[[1]])
+  print(paste("Spruce = 0 segments", length(which(dataS$spruce==0 & dataS$ba==0))))
+  print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
+  
+  rcps <- "CurrClim"
+  if(fmi_from_allas) rcps <- "CurrClim_fmi"
+  #    source_url("https://raw.githubusercontent.com/virpi-j/adaptFirst_runs/master/functions.R")
+  #source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/general/functions.r")
+  source("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/functions_IBSCarbon.R", local=T)
+  source("~/adaptFirst_runs/functions.R", local=T)
+  #source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/general/functions.r")
+  mortMod <<- 1
+  nYears <<- 2050-2015
+  endingYear <<- nYears + startingYear
+  byManual <- T
+  mortMod <<- 1
+  
+  deltaID=1; sampleID=1; climScen=0; easyInit=FALSE; CO2fixed=0;forceSaveInitSoil=F; cons10run = F; procDrPeat=F;coeffPeat1=-240;coeffPeat2=70;coefCH4 = 0.34; coefN20_1 = 0.23;coefN20_2 = 0.077; landClassUnman=NULL;compHarvX = 0;P0currclim=NA;fT0=NA;TminTmax = NA;toRaster=F; disturbanceON = NA; ingrowth = F; clcut = 1
+  
+  #if(!fmi_from_allas){
+  rcps0 = "CurrClim"; harvScen="Base"; harvInten="Base"; forceSaveInitSoil=T
+  out <- runModelAdapt(1,sampleID=1, outType = outType, rcps = rcps0, 
+                       harvScen="Base", 
+                       harvInten="Base", forceSaveInitSoil=T)
+  #} else {
+  #  out_fmi <- runModelAdapt(1,sampleID=1, outType = outType, rcps = "CurrClim_fmi", harvScen="Base", harvInten="Base",forceSaveInitSoil=T)
+  #}
+  #  sampleIDs <- 1:length(ops)
+  #  lapply(sampleIDs, 
+  #         function(jx) { 
+  #           runModelAdapt(1,sampleID=jx, outType = outType, rcps = "CurrClim_fmi",
+  #                         harvScen="Base", harvInten="Base",
+  #                         forceSaveInitSoil=T)
+  #           gc()
+  #         })
+  print(paste("SBB area",sum(ops[[1]]$area[which(ops[[1]]$forestdamagequalifier=="1602")])))
+  if(fmi_from_allas) rcps <- "CurrClim_fmi"
+  nYears <<- 2024-2015
+  ops <<- list(dataS)#list(dataS[,..cols_in_prebas])
+  endingYear <<- nYears + startingYear
+  clcuts <<- 1
+  disturbanceON <- c("fire","wind","bb")
+  source("~/adaptFirst_runs/functions.R", local=T)
+  sampleXs <- runModelAdapt(1,sampleID=1, outType = outType, rcps = rcps, 
+                            disturbanceON = disturbanceON, 
+                            harvScen="NoHarv", harvInten="NoHarv")
+  #sampleXs0 <- lapply(sampleIDs, 
+  #                    function(jx) { 
+  #                      runModelAdapt(1,sampleID = jx, outType=outType,  
+  #                                    harvScen="NoHarv",rcps = rcps, # clcut = clcuts,
+  #                                    harvInten="NoHarv")
+  #                      #ingrowth = T, 
+  #                      #clcut = -1, disturbanceON = disturbanceON)
+  #                    })
+  
   #}    
   ops <- list(dataS)
   print(paste("SBB area",sum(ops[[1]]$area[which(ops[[1]]$forestdamagequalifier=="1602")])))
@@ -761,10 +761,11 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   any(SBBReactionBA>0)
   BA <- apply(sampleXs$region$multiOut[,,"BA",,1],1:2,sum)
   Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
-  Vrw <- cbind(Vrw,Vrw[,ncol(Vrw)])
+  Vrw <- cbind(Vrw,Vrw[,ncol(Vrw)]) # harvests done next year
   Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)[,-1]
   Ven <- cbind(Ven,Ven[,ncol(Ven)])
   Vrw <- Vrw+Ven
+  
   ## wind
   # all segment areas as initial values for the damages
   areaSamplew <- array(ops[[1]]$area,c(dim(SBBReactionBA))) # Segment areas where damage happened
@@ -839,6 +840,6 @@ output_stats <- lapply(1:length(rids), function(jx) {
   calculateStatistics(jx, fmi_from_allas = fmi_from_allas, weighted = F)
 })      
 
-save(output_stats, file = "/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Results/validation_stats.rdata")
+#save(output_stats, file = "/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Results/validation_stats.rdata")
 #any(sampleXs$regio$multiOut[,,"grossGrowth/bb BA disturbed",,2]>0)
 
