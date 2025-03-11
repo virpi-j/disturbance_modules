@@ -45,7 +45,12 @@ ContinueIterations <- F
 rnos <- c(1:8,8:19)
 rids <- rids0 <- c(1,3:length(rnos))
 #rids <- rids0 <- rids[10:length(rnos)]
-rids <- rids0 <- rids[8:length(rnos)]
+if(!exists("setX")) setX<-1
+if(setX==1){
+  rids <- rids0 <- rids[1:7]
+}  else if(setX==2){
+  rids <- rids0 <- rids[8:length(rnos)]
+}
 #rids0 <- c(20,19,8,17,7)
 #rids0 <- c(6,18,4,9,13)
 #rids0 <- c(12,15,5,10,11)
@@ -607,7 +612,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
 
 ij <- 1
 #fmi_from_allas <- F
-if(!exists("fmi_from_allas")) fmi_from_allas <- T
+#if(!exists("fmi_from_allas")) fmi_from_allas <- T
 if(!exists("weighted")) weighted <- F
 
 calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
@@ -786,7 +791,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   areaSamplebbHarv <- areaSamplebb
   areaSamplebbHarv[Vrw==0] <- 0
   ##
-    
+  
   years <- (startingYear+1):endingYear
   years <- years[years>2018 & years<2024]
   bb_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","sim_harvested","sim_all")))
@@ -794,6 +799,15 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   probs_segm <- array(0,c(length(years),6),dimnames = list(years,c("min_pw_decl_segm","pw_median_decl","pw_median_decl/median_all",
                                                                    "min_pbb_decl_segm","pbb_median_decl","pbb_median_decl/median_all")))
   
+  nbb <- which(SBBReactionBA>0)
+  if(length(nbb>0)){
+    areabb <- array(ops[[1]]$area,c(dim(SBBReactionBA)))[SBBReactionBA>0] # Segment areas where damage happened
+    areabbHarv <- areaSamplebbHarv[SBBReactionBA>0]
+    yearsSamplebb <- t(array((startingYear+1):endingYear, c(dim(SBBReactionBA)[c(2,1)])))[SBBReactionBA>0] # years for damage
+    damageBASamplebb <- SBBReactionBA[SBBReactionBA>0]
+    BASamplebb <- BA[SBBReactionBA>0]
+    allDamagesbb <- data.table(damageBASamplebb,BASamplebb,areabb,areabbHarv,yearsSamplebb)
+  }
   ti <- 1
   for(ti in 1:length(years)){
     yeari <- years[ti]
@@ -827,7 +841,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   print(colSums(w_dam_area))
   print(paste("Region",r_no,"/",regnames[r_noi],": decl segment probabilities"))
   print(probs_segm)
-  out <- list(bb_dam_area,w_dam_area,probs_segm,regnames[r_noi])
+  out <- list(bb_dam_area,w_dam_area,probs_segm,regnames[r_noi],allDamagesbb)
   save(out, file = paste0("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Results/validation_stats_rno",r_no,".rdata"))
   return(out)
   rm(list=setdiff(ls(),c(toMem,"out")))
