@@ -805,6 +805,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
                                                                    "min_pbb_decl_segm","pbb_median_decl","pbb_median_decl/median_all")))
   
   nbb <- which(SBBReactionBA>0)
+  allDamagesbb <- NA
   if(length(nbb>0)){
     areabb <- array(ops[[1]]$area,c(dim(SBBReactionBA)))[SBBReactionBA>0] # Segment areas where damage happened
     areabbHarv <- areaSamplebbHarv[SBBReactionBA>0]
