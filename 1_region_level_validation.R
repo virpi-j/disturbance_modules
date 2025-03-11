@@ -682,10 +682,12 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
     
     # Change file name
     file.rename(list.files(path=workdir, pattern="fmi_vars_", all.files=FALSE,full.names=FALSE)[1],
-                "fmi_vars_PREBAS.rdata")
+                paste0("fmi_vars_PREBAS",setX,".rdata"))
     file.rename(list.files(path=workdir, pattern="climID_lookup_", all.files=FALSE,full.names=FALSE)[1],
-                "climID_lookup.rdata")
+                paste0("climID_lookup",setX,".rdata"))
     rm(list = setdiff(ls(), toMemFmi))
+    fmi_vars_PREBAS_file <- paste0("fmi_vars_PREBAS",setX,".rdata")
+    climID_lookup_file <- paste0("climID_lookup",setX,".rdata")
     gc()
   }
   setwd(workdir)
@@ -703,7 +705,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   #    source_url("https://raw.githubusercontent.com/virpi-j/adaptFirst_runs/master/functions.R")
   #source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/general/functions.r")
   source("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/functions_IBSCarbon.R", local=T)
-  source("~/adaptFirst_runs/functions.R", local=T)
+#  source("~/adaptFirst_runs/functions.R", local=T)
+  source("~/disturbance_modules/functions.R", local=T)
   #source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/general/functions.r")
   mortMod <<- 1
   nYears <<- 2050-2015
@@ -736,7 +739,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   endingYear <<- nYears + startingYear
   clcuts <<- 1
   disturbanceON <- c("fire","wind","bb")
-  source("~/adaptFirst_runs/functions.R", local=T)
+#  source("~/adaptFirst_runs/functions.R", local=T)
+  source("~/disturbance_modules/functions.R", local=T)
   sampleXs <- runModelAdapt(1,sampleID=1, outType = outType, rcps = rcps, 
                             disturbanceON = disturbanceON, 
                             harvScen="NoHarv", harvInten="NoHarv")
