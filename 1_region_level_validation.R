@@ -47,7 +47,7 @@ rids <- rids0 <- c(1,3:length(rnos))
 #rids <- rids0 <- rids[10:length(rnos)]
 if(!exists("setX")) setX<-1
 if(setX==1){
-  rids <- rids0 <- rids[1:7]
+  rids <- rids0 <- rids[5:7]
 }  else if(setX==2){
   rids <- rids0 <- rids[8:length(rnos)]
 }
