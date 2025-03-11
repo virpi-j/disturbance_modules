@@ -692,6 +692,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   
   climatepath_orig = "/scratch/project_2000994/RCP/"
   station_id <- "tmp"
+  if(setX==2) station_id <- "tmp2"
   climScen <- 0
   nSegs <- nrow(ops[[1]])
   print(paste("Spruce = 0 segments", length(which(dataS$spruce==0 & dataS$ba==0))))
