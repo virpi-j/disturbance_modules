@@ -46,11 +46,13 @@ rnos <- c(1:8,8:19)
 rids <- rids0 <- c(1,3:length(rnos))
 #rids <- rids0 <- rids[10:length(rnos)]
 if(!exists("setX")) setX<-1
-if(setX==1){
-  rids <- rids0 <- rids[5:7]
-}  else if(setX==2){
-  rids <- rids0 <- rids[16:length(rnos)]
-}
+if(!exists("ridsi")) ridsi <- 1:length(rids)
+rids <- rids0 <- rids[ridsi]
+#if(setX==1){
+#  rids <- rids0 <- rids[5:7]
+#}  else if(setX==2){
+#  rids <- rids0 <- rids[16:length(rnos)]
+#}
 #rids0 <- c(20,19,8,17,7)
 #rids0 <- c(6,18,4,9,13)
 #rids0 <- c(12,15,5,10,11)
@@ -769,7 +771,11 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   #SBBReactionBA <-  apply(sampleXs$region$multiOut[,,"grossGrowth/bb BA disturbed",,2],1:2,sum)
   SBBReactionBA <-  apply(sampleXs$region$multiOut[,,43,,2],1:2,sum)
   any(SBBReactionBA>0)
+  Intensitybb <- sampleXs$region$multiOut[,,48,1,2]
   BA <- apply(sampleXs$region$multiOut[,,"BA",,1],1:2,sum)
+  Vspruce <- array(unlist(vSpFun(sampleXs$region,2)[,-1],dim(BA)))
+  BAspruce <- array(unlist(BASpFun(sampleXs$region,2)[,-1],dim(BA)))
+  V <- apply(sampleXs$region$multiOut[,,"V",,1],1:2,sum)
   Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
   Vrw <- cbind(Vrw,Vrw[,ncol(Vrw)]) # harvests done next year
   Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)[,-1]
@@ -798,22 +804,29 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   ##
   
   years <- (startingYear+1):endingYear
+  nbb <- which(SBBReactionBA>0)
+  allDamagesbb <- NA
+  if(length(nbb>0)){
+    areabb <- array(ops[[1]]$area,c(dim(SBBReactionBA)))[SBBReactionBA>0] # Segment areas where damage happened
+    areabbHarv <- areaSamplebbHarv[SBBReactionBA>0]
+    yearsSamplebb <- t(array(years, c(dim(SBBReactionBA)[c(2,1)])))[SBBReactionBA>0] # years for damage
+    VSamplebb <- V[SBBReactionBA>0]
+    BASamplebb <- BA[SBBReactionBA>0]
+    VspruceSamplebb <- c(Vspruce[SBBReactionBA>0])
+    BAspruceSamplebb <- c(BAspruce[SBBReactionBA>0])
+    damageIntenSamplebb <- Intensitybb[SBBReactionBA>0]
+    damageBASamplebb <- SBBReactionBA[SBBReactionBA>0]
+    BASamplebb <- BA[SBBReactionBA>0]
+    allDamagesbb <- data.table(BAspruceSamplebb,VspruceSamplebb,BASamplebb,VSamplebb,
+                               damageIntenSamplebb,damageBASamplebb,BASamplebb,
+                               areabb,areabbHarv,yearsSamplebb)
+  }
   years <- years[years>2018 & years<2024]
   bb_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","sim_harvested","sim_all")))
   w_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","sim_harvested","sim_all")))
   probs_segm <- array(0,c(length(years),6),dimnames = list(years,c("min_pw_decl_segm","pw_median_decl","pw_median_decl/median_all",
                                                                    "min_pbb_decl_segm","pbb_median_decl","pbb_median_decl/median_all")))
   
-  nbb <- which(SBBReactionBA>0)
-  allDamagesbb <- NA
-  if(length(nbb>0)){
-    areabb <- array(ops[[1]]$area,c(dim(SBBReactionBA)))[SBBReactionBA>0] # Segment areas where damage happened
-    areabbHarv <- areaSamplebbHarv[SBBReactionBA>0]
-    yearsSamplebb <- t(array((startingYear+1):endingYear, c(dim(SBBReactionBA)[c(2,1)])))[SBBReactionBA>0] # years for damage
-    damageBASamplebb <- SBBReactionBA[SBBReactionBA>0]
-    BASamplebb <- BA[SBBReactionBA>0]
-    allDamagesbb <- data.table(damageBASamplebb,BASamplebb,areabb,areabbHarv,yearsSamplebb)
-  }
   ti <- 1
   for(ti in 1:length(years)){
     yeari <- years[ti]
