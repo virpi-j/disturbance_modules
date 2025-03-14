@@ -720,10 +720,10 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   
   #if(!fmi_from_allas){
   rcps0 = "CurrClim"; harvScen="Base"; harvInten="Base"; forceSaveInitSoil=T
-  #out <- 
-    runModelAdapt(1,sampleID=1, outType = outType, rcps = rcps0, 
+  out <-   runModelAdapt(1,sampleID=1, outType = outType, rcps = rcps0, 
                        harvScen="Base", 
                        harvInten="Base", forceSaveInitSoil=T)
+  rm("out")
   gc()
   #} else {
   #  out_fmi <- runModelAdapt(1,sampleID=1, outType = outType, rcps = "CurrClim_fmi", harvScen="Base", harvInten="Base",forceSaveInitSoil=T)
@@ -862,7 +862,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   print(colSums(w_dam_area))
   print(paste("Region",r_no,"/",regnames[r_noi],": decl segment probabilities"))
   print(probs_segm)
-  out <- list(bb_dam_area,w_dam_area,probs_segm,regnames[r_noi],allDamagesbb)
+  sampleArea <- sum(ops[[1]]$area)
+  out <- list(bb_dam_area,w_dam_area,probs_segm,regnames[r_noi],allDamagesbb, sampleArea)
   save(out, file = paste0("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Results/validation_stats_rno",r_no,".rdata"))
   return(out)
   rm(list=setdiff(ls(),c(toMem,"out")))
