@@ -720,9 +720,11 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   
   #if(!fmi_from_allas){
   rcps0 = "CurrClim"; harvScen="Base"; harvInten="Base"; forceSaveInitSoil=T
-  out <- runModelAdapt(1,sampleID=1, outType = outType, rcps = rcps0, 
+  #out <- 
+    runModelAdapt(1,sampleID=1, outType = outType, rcps = rcps0, 
                        harvScen="Base", 
                        harvInten="Base", forceSaveInitSoil=T)
+  gc()
   #} else {
   #  out_fmi <- runModelAdapt(1,sampleID=1, outType = outType, rcps = "CurrClim_fmi", harvScen="Base", harvInten="Base",forceSaveInitSoil=T)
   #}
