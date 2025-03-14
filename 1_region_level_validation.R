@@ -756,7 +756,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F){
   #                      #ingrowth = T, 
   #                      #clcut = -1, disturbanceON = disturbanceON)
   #                    })
-  
+  gc()
   #}    
   ops <- list(dataS)
   print(paste("SBB area",sum(ops[[1]]$area[which(ops[[1]]$forestdamagequalifier=="1602")])))
