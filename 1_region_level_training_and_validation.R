@@ -10,7 +10,7 @@ asParallel <- F
 if(neighborIDs) asParallel <- T
 if(!exists("toFile")) toFile <- T
 if(!exists("nSegs")) nSegs <- 30000
-if(toFile) nSegs <- 40000
+#if(toFile) nSegs <- 30000
 ttAll <- T # T = Add data outside forest declarations to the simulations
 
 set.seed(1)
@@ -800,7 +800,7 @@ trainingSetCreation <- function(sampleXs, dataS, startingYear=2015, endingYear=2
   #return(output_mem)
   #outputs <- rbind(outputs,output_mem)
   if(toFile){ 
-    save(outputs,file=paste0(savepath,"SBB_sample_training_rno",rnoi,"_",regnames[r_noi],".rdata"))
+    save(outputs,file=paste0(savepath,"SBB_sample_training_rno",r_noi,"_",regnames[r_noi],".rdata"))
     print(paste0("outputs saved for region ",r_no,"/",regnames[r_noi]))
   }  
   #print(Sys.time()-time0)
