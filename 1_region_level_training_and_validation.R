@@ -911,9 +911,12 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
                       harvScen="Base",sampleX = dataS, 
                       harvInten="Base", forceSaveInitSoil=T,
                       disturbanceON = disturbanceON)
-    print(apply(out$region$multiOut[1,,"grossGrowth",,1],1,sum))
-    print(out$region$multiOut[1,,"Rh/SBBpob[layer_1]",1,2])
-    print(out$region$outDist[1,,"wrisk"])
+    print("grossgrowth")
+    print(round(apply(out$region$multiOut[1,1:10,"grossGrowth",,1],1,sum),1))
+    #print("BB prob")
+    #print(out$region$multiOut[1,,"Rh/SBBpob[layer_1]",1,2])
+    #print("wind prob")
+    #print(out$region$outDist[1,,"wrisk"])
     rm("out")
     gc()
 
@@ -929,21 +932,25 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
                            harvScen="NoHarv",sampleX = dataS, 
                            harvInten="NoHarv", 
                            disturbanceON = disturbanceON)
-    print(apply(sampleXs$region$multiOut[1,,"grossGrowth",,1],1,sum))
+    print("grossgrowth")
+    print(round(apply(sampleXs$region$multiOut[1,,"grossGrowth",,1],1,sum),1))
+    print("bb prob")
     print(sampleXs$region$multiOut[1,,"Rh/SBBpob[layer_1]",1,2])
+    print("fire prob")
     print(sampleXs$region$multiOut[1,,"W_wsap/fireRisk[layer_1]",1,2])
+    print("wind prob")
     print(sampleXs$region$outDist[1,,"wrisk"])
     gc()
     
     print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
-    print("SMIs:")
-    print(sampleXs$region$multiOut[1,,"NEP/SMI[layer_1]",1,2])
-    print("BBprob:")
-    print(sampleXs$region$multiOut[1,,"Rh/SBBpob[layer_1]",1,2])
-    print("fireprob:")
-    print(sampleXs$region$multiOut[1,,"W_wsap/fireRisk[layer_1]",1,2])
-    print("windprob:")
-    print(sampleXs$region$outDist[1,,"wrisk"])
+    #print("SMIs:")
+    #print(sampleXs$region$multiOut[1,,"NEP/SMI[layer_1]",1,2])
+    #print("BBprob:")
+    #print(sampleXs$region$multiOut[1,,"Rh/SBBpob[layer_1]",1,2])
+    #print("fireprob:")
+    #print(sampleXs$region$multiOut[1,,"W_wsap/fireRisk[layer_1]",1,2])
+    #print("windprob:")
+    #print(sampleXs$region$outDist[1,,"wrisk"])
     
     # SBB simulated damage segments
     #SBBReactionBA <-  apply(sampleXs$region$multiOut[,,"grossGrowth/bb BA disturbed",,2],1:2,sum)
