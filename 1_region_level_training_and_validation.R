@@ -338,7 +338,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
 
 ###############################################################################
 TestaaSBBkoodi=F
-trainingSetCreation <- function(sampleXs, dataS, startingYear=2015, endingYear=2050,
+trainingSetCreation <- function(r_noi, sampleXs, dataS, startingYear=2015, endingYear=2050,
                                 TestaaSBBkoodi=F, neighborIDs=F){ # Inputs to modelfitting
   multiout <- sampleXs$region$multiOut
   #print(multiout[6,,"BA",,1])
@@ -801,7 +801,7 @@ trainingSetCreation <- function(sampleXs, dataS, startingYear=2015, endingYear=2
   #outputs <- rbind(outputs,output_mem)
   if(toFile){ 
     save(outputs,file=paste0(savepath,"SBB_sample_training_rno",r_noi,"_",regnames[r_noi],".rdata"))
-    print(paste0("outputs saved for region ",r_no,"/",regnames[r_noi]))
+    print(paste0("outputs saved for region ",r_noi,"/",regnames[r_noi]))
   }  
   #print(Sys.time()-time0)
   rm(list=setdiff(ls(),toMem))
@@ -1040,11 +1040,12 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     print(probs_segm)
     sampleArea <- sum(dataS$area)
     out <- list(bb_dam_area,w_dam_area,probs_segm,regnames[r_noi],allDamagesbb, sampleArea)
-    save(out, file = paste0("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Results/validation_stats_rno",r_no,"_",names(sample)[setid],".rdata"))
+    #save(out, file = paste0("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Results/validation_stats_rno",r_no,"_",names(sample)[setid],".rdata"))
+    save(out, file = paste0(savepath,"validation_stats_rno",r_no,"_",names(sample)[setid],".rdata"))
     print(paste0("saved file validation_stats_rno",r_no,"_",names(sample)[setid],".rdata"))
         
     
-    if(setid==1) outputs <- trainingSetCreation(sampleXs, dataS, neighborIDs = neighborIDs,
+    if(setid==1) outputs <- trainingSetCreation(r_noi, sampleXs, dataS, neighborIDs = neighborIDs,
                                                 startingYear = startingYear, endingYear= endingYear,
                                                 TestaaSBBkoodi=F)
     
