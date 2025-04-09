@@ -887,7 +887,6 @@ if(FALSE){
   par(mfrow=c(1,1))
   for(ij in 1:dim(declInformation)[3]){
     #for(ti in 1:3){
-    title <- paste(decltypes[ij])
     #if(ti==3){    
     if(ij%%2==0){
       tmp <- declInformation[,-1,ij]/declInformation[,-1,ij-1]*100
