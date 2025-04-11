@@ -316,21 +316,17 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
     outputNeighbor[outputNeighbor==1e12] <- NA
     #rm(list=c("xx","yy","dx"))
     gc()
-    #print(dataS$x)
     dataS <- cbind(dataS,outputNeighbor)
-    
-    
-    #print(dataS$x)
-    #hist(na.omit(clearcutNeighbor[,1]))
   }
   if(!toFile) head(sampleTraining)
-  samples <- list(sampleTraining, sampleValidation)
-  names(samples) <- c("sampleTraining", "sampleValidation")
+  #samples <- list(sampleTraining, sampleValidation)
+  #names(samples) <- c("sampleTraining", "sampleValidation")
+  samples <- list(sampleTraining, sampleValidation, damInfo,areatot, vars_to_prebas)
+  names(samples) <- c("sampleTraining", "sampleValidation","damInfo","areatot","vars_to_prebas")
   save(samples, damInfo, 
        file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/MKIdata/samples_train_valid_",r_noi,".rdata"))
-  xx <- list(sampleTraining, sampleValidation, damInfo,areatot, vars_to_prebas)
-  names(xx) <- c("sampleTraining", "sampleValidation","damInfo","areatot","vars_to_prebas")
-  return(xx)
+  print("sample data saved.")
+  return(samples)
   rm(list=setdiff(ls(),toMem))
   gc()
   
@@ -340,6 +336,8 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
 TestaaSBBkoodi=F
 trainingSetCreation <- function(r_noi, sampleXs, dataS, startingYear=2015, endingYear=2050,
                                 TestaaSBBkoodi=F, neighborIDs=F){ # Inputs to modelfitting
+  r_no <- rnos[r_noi]
+  print(paste("Calculate training set for region",r_no))
   multiout <- sampleXs$region$multiOut
   #print(multiout[6,,"BA",,1])
   any(multiout[,,"W_wsap/fireRisk[layer_1]",1,2]>0)
@@ -823,15 +821,19 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
   r_no <- rnos[r_noi]
   
   sample <- calculateOPSdata(r_noi,nSegs = nSegs, neighborIDs = F, weighted = weighted)
-
+  gc()
+  
   setid <- 1  
   for(setid in 1:2){ # Go through training and validation sets
+    toMem3 <- ls()
     dataS <- sample[[setid]] # setid=1 for training, setid=2 for validation  
     cols_in_prebas <- which(colnames(dataS)%in%c(sample$vars_to_prebas,"x","y"))
     area_tot <- totArea <- sample$areatot
     # PREBAS runs
     source("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Settings_IBCCarbon.R", local=T)  
     setwd("/scratch/project_2000994/PREBASruns/PREBAStesting/")
+    rm("data.all")
+    gc()
     
     print(paste("Region",r_no,"/",names(sample)[setid]))
     print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
@@ -906,6 +908,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     #if(!fmi_from_allas){
     rcps0 = "CurrClim"; harvScen="Base"; harvInten="Base"; forceSaveInitSoil=T
     disturbanceON <- NA# c("fire","wind","bb")
+    toMem2 <- ls()
     out <-   runModel(1,sampleID=1, outType = outType, 
                       RCP=0, rcps = rcps0, 
                       harvScen="Base",sampleX = dataS, 
@@ -917,7 +920,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     #print(out$region$multiOut[1,,"Rh/SBBpob[layer_1]",1,2])
     #print("wind prob")
     #print(out$region$outDist[1,,"wrisk"])
-    rm("out")
+    rm(list=setdiff(ls(), toMem2))
     gc()
 
     print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
@@ -927,11 +930,14 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     clcuts <<- 1
     disturbanceON <- c("fire","wind","bb")
     source("~/finruns_to_update/functions.R", local=T)
+    toMem2 <- ls()
     sampleXs <-   runModel(1,sampleID=1, outType = outType, 
                            RCP=0, rcps = rcps, 
                            harvScen="NoHarv",sampleX = dataS, 
                            harvInten="NoHarv", 
                            disturbanceON = disturbanceON)
+    rm(list=setdiff(ls(),c(toMem2,"sampleXs")))
+    gc()
     print("grossgrowth")
     print(round(apply(sampleXs$region$multiOut[1,,"grossGrowth",,1],1,sum),1))
     print("bb prob")
@@ -940,8 +946,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     print(sampleXs$region$multiOut[1,,"W_wsap/fireRisk[layer_1]",1,2])
     print("wind prob")
     print(sampleXs$region$outDist[1,,"wrisk"])
-    gc()
-    
+
     print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
     #print("SMIs:")
     #print(sampleXs$region$multiOut[1,,"NEP/SMI[layer_1]",1,2])
@@ -1048,16 +1053,21 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     sampleArea <- sum(dataS$area)
     out <- list(bb_dam_area,w_dam_area,probs_segm,regnames[r_noi],allDamagesbb, sampleArea)
     #save(out, file = paste0("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Results/validation_stats_rno",r_no,"_",names(sample)[setid],".rdata"))
-    save(out, file = paste0(savepath,"validation_stats_rno",r_no,"_",names(sample)[setid],".rdata"))
-    print(paste0("saved file validation_stats_rno",r_no,"_",names(sample)[setid],".rdata"))
+    save(out, file = paste0(savepath,"validation_stats_rno",r_noi,"_",names(sample)[setid],".rdata"))
+    print(paste0("saved file validation_stats_rno",r_noi,"_",names(sample)[setid],".rdata"))
         
     
-    if(setid==1) outputs <- trainingSetCreation(r_noi, sampleXs, dataS, neighborIDs = neighborIDs,
+    if(setid==1){ 
+      toMem2 <- ls()
+      outputs <- trainingSetCreation(r_noi, sampleXs, dataS, neighborIDs = neighborIDs,
                                                 startingYear = startingYear, endingYear= endingYear,
                                                 TestaaSBBkoodi=F)
-    
+      rm(list=setdiff(ls(),toMem2))
+    }
+    rm(list=setdiff(ls(),toMem3))
+    gc()
   }
-  rm(list=setdiff(ls(),c(toMem,"out","outputs")))
+  rm(list=setdiff(ls(),c(toMem)))#,"out","outputs")))
   gc()
   return(outputs)
 }
