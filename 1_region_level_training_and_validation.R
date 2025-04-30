@@ -3,6 +3,7 @@
 if(dev.interactive()) dev.off()
 if(!exists("fmi_from_allas")) fmi_from_allas <- F
 if(!exists("weighted")) weighted <- F
+if(!exists("onlyValidationset")) onlyValidationset <- T
 outType <- "testRun"
 neighborIDs <- F
 toFile <- T
@@ -217,19 +218,26 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
   # training set from the rest of segments: 
   data.all <- data.all[setdiff(1:nrow(data.all),ni),]
   gc()
-  # damaged segments, max nSegs/3 rows
-  damID <- dam_indexs[dam_names=="SBB"]
-  ni <- which(data.all$forestdamagequalifier==damID)
-  nsDam <- round(nSegs/3)
-  if(length(ni) > nsDam) ni <- ni[sample(1:length(ni), nsDam, replace = F)]
-  sampleTraining <- data.all[ni,]
-  # Sample from outside damaged segments
-  ns <- nSegs - length(ni)
-  ni <- which(!(data.all$forestdamagequalifier%in%c(damID)))
-  ni <- ni[sample(1:length(ni),ns, replace = F)]
-  sampleTraining <- rbind(sampleTraining, data.all[ni,])
-  rm("data.all")
-  gc()
+  
+  weightedTraining <- T
+  if(weightedTraining){
+    # damaged segments, max nSegs/3 rows
+    damID <- dam_indexs[dam_names=="SBB"]
+    ni <- which(data.all$forestdamagequalifier==damID)
+    nsDam <- round(nSegs/3)
+    if(length(ni) > nsDam) ni <- ni[sample(1:length(ni), nsDam, replace = F)]
+    sampleTraining <- data.all[ni,]
+    # Sample from outside damaged segments
+    ns <- nSegs - length(ni)
+    ni <- which(!(data.all$forestdamagequalifier%in%c(damID)))
+    ni <- ni[sample(1:length(ni),ns, replace = F)]
+    sampleTraining <- rbind(sampleTraining, data.all[ni,])
+    rm("data.all")
+    gc()
+  } else {
+    ni <- sample(1:nrow(data.all), nSegs, replace=F)
+    sampleTraining <- data.all[ni,]
+  }
   
   # X and y coordinates for the samples
   setkey(data.IDs,segID)
@@ -335,7 +343,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
 ###############################################################################
 TestaaSBBkoodi=F
 trainingSetCreation <- function(r_noi, sampleXs, dataS, startingYear=2015, endingYear=2050,
-                                TestaaSBBkoodi=F, neighborIDs=F){ # Inputs to modelfitting
+                                TestaaSBBkoodi=F, neighborIDs=F,setname="training"){ # Inputs to modelfitting
   r_no <- rnos[r_noi]
   print(paste("Calculate training set for region",r_no))
   multiout <- sampleXs$region$multiOut
@@ -798,8 +806,8 @@ trainingSetCreation <- function(r_noi, sampleXs, dataS, startingYear=2015, endin
   #return(output_mem)
   #outputs <- rbind(outputs,output_mem)
   if(toFile){ 
-    save(outputs,file=paste0(savepath,"SBB_sample_training_rno",r_noi,"_",regnames[r_noi],".rdata"))
-    print(paste0("outputs saved for region ",r_noi,"/",regnames[r_noi]))
+    save(outputs,file=paste0(savepath,"SBB_sample_",setname,"_rno",r_noi,"_",regnames[r_noi],".rdata"))
+    print(paste0("outputs saved for set",setname," region ",r_noi,"/",regnames[r_noi]))
   }  
   #print(Sys.time()-time0)
   rm(list=setdiff(ls(),toMem))
@@ -819,12 +827,13 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
   toMem <- ls()
   r_noi <- rids[ij]
   r_no <- rnos[r_noi]
-  
+  print(paste("Region", r_no,"sample"))
   sample <- calculateOPSdata(r_noi,nSegs = nSegs, neighborIDs = F, weighted = weighted)
   gc()
   
-  setid <- 1  
-  for(setid in 1:2){ # Go through training and validation sets
+  setid0 <- 1  
+  if(onlyValidationset) setid0 <- 2 
+  for(setid in setid0:2){ # Go through training and validation sets
     toMem3 <- ls()
     dataS <- sample[[setid]] # setid=1 for training, setid=2 for validation  
     cols_in_prebas <- which(colnames(dataS)%in%c(sample$vars_to_prebas,"x","y"))
@@ -1057,19 +1066,20 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     print(paste0("saved file validation_stats_rno",r_noi,"_",names(sample)[setid],".rdata"))
         
     
-    if(setid==1){ 
+    #if(setid==1){ 
+    nams <- c("training","validation")
       toMem2 <- ls()
       outputs <- trainingSetCreation(r_noi, sampleXs, dataS, neighborIDs = neighborIDs,
                                                 startingYear = startingYear, endingYear= endingYear,
-                                                TestaaSBBkoodi=F)
-      rm(list=setdiff(ls(),toMem2))
-    }
-    rm(list=setdiff(ls(),toMem3))
+                                                TestaaSBBkoodi=F,nams[setid])
+      rm(list=setdiff(ls(),c(toMem2,"outputs")))
+    #}
+    rm(list=setdiff(ls(),c(toMem3,"outputs")))
     gc()
   }
+  #return(outputs)
   rm(list=setdiff(ls(),c(toMem)))#,"out","outputs")))
   gc()
-  return(outputs)
 }
 #calculateStatistics(1, fmi_from_allas = fmi_from_allas, weighted = F)
 output_stats <- lapply(1:length(rids), function(jx) {
