@@ -833,6 +833,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
   
   setid0 <- 1  
   if(onlyValidationset) setid0 <- 2 
+  setid <- setid0
   for(setid in setid0:2){ # Go through training and validation sets
     toMem3 <- ls()
     dataS <- sample[[setid]] # setid=1 for training, setid=2 for validation  
@@ -882,15 +883,16 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
       # RUN
       result <- do.call(setup_and_run, setup_and_run_args)
       
-      # Change file name
-      file.rename(list.files(path=workdir, pattern="fmi_vars_", all.files=FALSE,full.names=FALSE)[1],
-                  paste0("fmi_vars_PREBAS",setX,".rdata"))
-      file.rename(list.files(path=workdir, pattern="climID_lookup_", all.files=FALSE,full.names=FALSE)[1],
-                  paste0("climID_lookup",setX,".rdata"))
       rm(list = setdiff(ls(), toMemFmi))
-      fmi_vars_PREBAS_file <- paste0("fmi_vars_PREBAS",setX,".rdata")
-      climID_lookup_file <- paste0("climID_lookup",setX,".rdata")
       gc()
+      
+      # Change file name
+      fmi_vars_PREBAS_file <<- paste0("fmi_vars_PREBAS",setX,".rdata")
+      climID_lookup_file <<- paste0("climID_lookup_PREBAS",setX,".rdata")
+      file.rename(list.files(path=workdir, pattern="fmi_vars_", all.files=FALSE,full.names=FALSE)[1],
+                  fmi_vars_PREBAS_file)
+      file.rename(list.files(path=workdir, pattern="climID_lookup_", all.files=FALSE,full.names=FALSE)[1],
+                  climID_lookup_file)
     }
     setwd(workdir)
     
@@ -912,7 +914,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     byManual <- T
     mortMod <<- 1
     
-    deltaID=1; sampleID=1; sampleX <-dataS;climScen=0;RCP=0; easyInit=FALSE; CO2fixed=0;forceSaveInitSoil=F; cons10run = F; procDrPeat=F;coeffPeat1=-240;coeffPeat2=70;coefCH4 = 0.34; coefN20_1 = 0.23;coefN20_2 = 0.077; landClassUnman=NULL;compHarvX = 0;P0currclim=NA;fT0=NA;TminTmax = NA;toRaster=F; disturbanceON = NA; ingrowth = F; clcut = 1
+    deltaID=1; sampleID=1; sampleX <-dataS;climScen=0;RCP=0; easyInit=FALSE; 
+    initSoilCreStart=NULL; CO2fixed=0;forceSaveInitSoil=F; cons10run = F; procDrPeat=F;coeffPeat1=-240;coeffPeat2=70;coefCH4 = 0.34; coefN20_1 = 0.23;coefN20_2 = 0.077; landClassUnman=NULL;compHarvX = 0;P0currclim=NA;fT0=NA;TminTmax = NA;toRaster=F; disturbanceON = NA; ingrowth = F; clcut = 1
     
     #if(!fmi_from_allas){
     rcps0 = "CurrClim"; harvScen="Base"; harvInten="Base"; forceSaveInitSoil=T
@@ -1072,9 +1075,9 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
       outputs <- trainingSetCreation(r_noi, sampleXs, dataS, neighborIDs = neighborIDs,
                                                 startingYear = startingYear, endingYear= endingYear,
                                                 TestaaSBBkoodi=F,nams[setid])
-      rm(list=setdiff(ls(),c(toMem2,"outputs")))
+      rm(list=setdiff(ls(),c(toMem2)))
     #}
-    rm(list=setdiff(ls(),c(toMem3,"outputs")))
+    rm(list=setdiff(ls(),c(toMem3)))
     gc()
   }
   #return(outputs)
