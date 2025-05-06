@@ -887,12 +887,12 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
       gc()
       
       # Change file name
-      fmi_vars_PREBAS_file <<- paste0("fmi_vars_PREBAS",setX,".rdata")
-      climID_lookup_file <<- paste0("climID_lookup_PREBAS",setX,".rdata")
+      fmi_vars_PREBAS_file <<- paste0("fmi_varsPREBAS",setX,".rdata")
+      climID_lookup_file <<- paste0("climID_lookupPREBAS",setX,".rdata")
       file.rename(list.files(path=workdir, pattern="fmi_vars_", all.files=FALSE,full.names=FALSE)[1],
                   fmi_vars_PREBAS_file)
       file.rename(list.files(path=workdir, pattern="climID_lookup_", all.files=FALSE,full.names=FALSE)[1],
-                  climID_lookup_file)
+                  paste0(workdir,climID_lookup_file))
     }
     setwd(workdir)
     
@@ -975,8 +975,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     any(SBBReactionBA>0)
     Intensitybb <- sampleXs$region$multiOut[,,48,1,2]
     BA <- apply(sampleXs$region$multiOut[,,"BA",,1],1:2,sum)
-    Vspruce <- array(unlist(vSpFun(sampleXs$region,2)[,-1],dim(BA)))
-    BAspruce <- array(unlist(BASpFun(sampleXs$region,2)[,-1],dim(BA)))
+    Vspruce <- array(unlist(vSpFun(sampleXs$region,2)[,-1]),dim(BA))
+    BAspruce <- array(unlist(BASpFun(sampleXs$region,2)[,-1]),dim(BA))
     V <- apply(sampleXs$region$multiOut[,,"V",,1],1:2,sum)
     Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
     Vrw <- cbind(Vrw,Vrw[,ncol(Vrw)]) # harvests done next year
