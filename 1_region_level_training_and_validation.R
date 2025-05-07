@@ -1028,60 +1028,66 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
                                  damageIntenSamplebb,damageBASamplebb,BASamplebb,
                                  areabb,areabbHarv,yearsSamplebb)
     }
-    years <- years[years>2018 & years<2024]
-    bb_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","sim_harvested","sim_all")))
-    w_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","sim_harvested","sim_all")))
-    probs_segm <- array(0,c(length(years),6),dimnames = list(years,c("min_pw_decl_segm","pw_median_decl","pw_median_decl/median_all",
-                                                                     "min_pbb_decl_segm","pbb_median_decl","pbb_median_decl/median_all")))
-    
-    ti <- 1
-    for(ti in 1:length(years)){
-      yeari <- years[ti]
-      nibb <- which(dataS$forestdamagequalifier=="1602" & as.numeric(dataS$dam_year)==yeari)
-      niw <- which(dataS$forestdamagequalifier=="1504" & as.numeric(dataS$dam_year)==yeari)
-      pw <- sampleXs$region$outDist[,yeari-2015,"wrisk"]
-      pbb <- sampleXs$region$multiOut[,yeari-2015,"Rh/SBBpob[layer_1]",1,2]
-      #hist(pbb,50)
-      if(length(niw)>0){
-        probs_segm[ti,1:3] <- c(min(pw[niw]),median(pw[niw]),
-                                median(pw[niw])/median(pw[setdiff(1:nSegs,niw)]))}
-      if(length(nibb)>0){
-        probs_segm[ti,4:6] <- c(min(pbb[nibb]),median(pbb[nibb]),
-                                median(pbb[nibb])/median(pbb[setdiff(1:nSegs,nibb)]))}
-      bb_dam_area[ti,] <- c(sum(dataS$area[which(dataS$forestdamagequalifier=="1602" &
-                                                      as.numeric(dataS$dam_year)==yeari)]),
-                            #sum(sampleXs$region$multiOut[,yeari-2015,"Rh/SBBpob[layer_1]",1,2]*dataS$area),
-                            sum(areaSamplebbHarv[,yeari-2015]),
-                            sum(areaSamplebb[,yeari-2015]))
-      w_dam_area[ti,] <- c(sum(dataS$area[which(dataS$forestdamagequalifier=="1504" &
+    if(climScen>0){
+      out <- array(0,c(2,nYears),dimnames = list(c("bbHarv","bbAll"),(startingYear+1):endingYear))
+      out[1,] <- colSums(areaSamplebbHarv)
+      out[2,] <- colSums(areaSamplebb)
+    } else if(climScen==0){
+      years <- years[years>2018 & years<2024]
+      bb_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","sim_harvested","sim_all")))
+      w_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","sim_harvested","sim_all")))
+      probs_segm <- array(0,c(length(years),6),dimnames = list(years,c("min_pw_decl_segm","pw_median_decl","pw_median_decl/median_all",
+                                                                       "min_pbb_decl_segm","pbb_median_decl","pbb_median_decl/median_all")))
+      
+      ti <- 1
+      for(ti in 1:length(years)){
+        yeari <- years[ti]
+        nibb <- which(dataS$forestdamagequalifier=="1602" & as.numeric(dataS$dam_year)==yeari)
+        niw <- which(dataS$forestdamagequalifier=="1504" & as.numeric(dataS$dam_year)==yeari)
+        pw <- sampleXs$region$outDist[,yeari-2015,"wrisk"]
+        pbb <- sampleXs$region$multiOut[,yeari-2015,"Rh/SBBpob[layer_1]",1,2]
+        #hist(pbb,50)
+        if(length(niw)>0){
+          probs_segm[ti,1:3] <- c(min(pw[niw]),median(pw[niw]),
+                                  median(pw[niw])/median(pw[setdiff(1:nSegs,niw)]))}
+        if(length(nibb)>0){
+          probs_segm[ti,4:6] <- c(min(pbb[nibb]),median(pbb[nibb]),
+                                  median(pbb[nibb])/median(pbb[setdiff(1:nSegs,nibb)]))}
+        bb_dam_area[ti,] <- c(sum(dataS$area[which(dataS$forestdamagequalifier=="1602" &
                                                      as.numeric(dataS$dam_year)==yeari)]),
-                           #sum(sampleXs$region$outDist[1,yeari-2015,"wrisk"]*dataS$area),
-                           sum(areaSamplewHarv[,yeari-2015]),
-                           sum(areaSamplew[,yeari-2015]))
-    }
-    print(paste("Region",r_no,"/",regnames[r_noi],": bb damaged segment area"))
-    print(bb_dam_area)
-    print(colSums(bb_dam_area))
-    print(paste("Region",r_no,"/",regnames[r_noi],": wind damaged segment area"))
-    print(w_dam_area)
-    print(colSums(w_dam_area))
-    print(paste("Region",r_no,"/",regnames[r_noi],": decl segment probabilities"))
-    print(probs_segm)
-    sampleArea <- sum(dataS$area)
-    out <- list(bb_dam_area,w_dam_area,probs_segm,regnames[r_noi],allDamagesbb, sampleArea)
-    #save(out, file = paste0("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Results/validation_stats_rno",r_no,"_",names(sample)[setid],".rdata"))
-    save(out, file = paste0(savepath,"validation_stats_rno",r_noi,"_",names(sample)[setid],".rdata"))
-    print(paste0("saved file validation_stats_rno",r_noi,"_",names(sample)[setid],".rdata"))
-        
-    
-    #if(setid==1){ 
-    nams <- c("training","validation")
+                              #sum(sampleXs$region$multiOut[,yeari-2015,"Rh/SBBpob[layer_1]",1,2]*dataS$area),
+                              sum(areaSamplebbHarv[,yeari-2015]),
+                              sum(areaSamplebb[,yeari-2015]))
+        w_dam_area[ti,] <- c(sum(dataS$area[which(dataS$forestdamagequalifier=="1504" &
+                                                    as.numeric(dataS$dam_year)==yeari)]),
+                             #sum(sampleXs$region$outDist[1,yeari-2015,"wrisk"]*dataS$area),
+                             sum(areaSamplewHarv[,yeari-2015]),
+                             sum(areaSamplew[,yeari-2015]))
+      }
+      print(paste("Region",r_no,"/",regnames[r_noi],": bb damaged segment area"))
+      print(bb_dam_area)
+      print(colSums(bb_dam_area))
+      print(paste("Region",r_no,"/",regnames[r_noi],": wind damaged segment area"))
+      print(w_dam_area)
+      print(colSums(w_dam_area))
+      print(paste("Region",r_no,"/",regnames[r_noi],": decl segment probabilities"))
+      print(probs_segm)
+      sampleArea <- sum(dataS$area)
+      out <- list(bb_dam_area,w_dam_area,probs_segm,regnames[r_noi],allDamagesbb, sampleArea)
+      #save(out, file = paste0("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Results/validation_stats_rno",r_no,"_",names(sample)[setid],".rdata"))
+      save(out, file = paste0(savepath,"validation_stats_rno",r_noi,"_",names(sample)[setid],".rdata"))
+      print(paste0("saved file validation_stats_rno",r_noi,"_",names(sample)[setid],".rdata"))
+      
+      
+      #if(setid==1){ 
+      nams <- c("training","validation")
       toMem2 <- ls()
       outputs <- trainingSetCreation(r_noi, sampleXs, dataS, neighborIDs = neighborIDs,
-                                                startingYear = startingYear, endingYear= endingYear,
-                                                TestaaSBBkoodi=F,nams[setid])
+                                     startingYear = startingYear, endingYear= endingYear,
+                                     TestaaSBBkoodi=F,nams[setid])
       rm(list=setdiff(ls(),c(toMem2)))
-    #}
+      #}
+    }
     rm(list=setdiff(ls(),c(toMem3)))
     gc()
   }
