@@ -219,7 +219,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
   data.all <- data.all[setdiff(1:nrow(data.all),ni),]
   gc()
   
-  weightedTraining <- T
+  weightedTraining <- weighted
   if(weightedTraining){
     # damaged segments, max nSegs/3 rows
     damID <- dam_indexs[dam_names=="SBB"]
@@ -331,9 +331,11 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
   #names(samples) <- c("sampleTraining", "sampleValidation")
   samples <- list(sampleTraining, sampleValidation, damInfo,areatot, vars_to_prebas)
   names(samples) <- c("sampleTraining", "sampleValidation","damInfo","areatot","vars_to_prebas")
-  save(samples, damInfo, 
-       file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/MKIdata/samples_train_valid_",r_noi,".rdata"))
-  print("sample data saved.")
+  if(weighted){
+    save(samples, damInfo, 
+         file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/MKIdata/samples_train_valid_",r_noi,".rdata"))
+    print("sample data saved.")
+  }
   return(samples)
   rm(list=setdiff(ls(),toMem))
   gc()
@@ -822,7 +824,7 @@ ij <- 1
 #if(!exists("fmi_from_allas")) fmi_from_allas <- T
 if(!exists("weighted")) weighted <- F
 
-calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = outputs){
+calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = outputs, climScen=0){
   set.seed(10)
   toMem <- ls()
   r_noi <- rids[ij]
@@ -834,7 +836,9 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
   setid0 <- 1  
   if(onlyValidationset) setid0 <- 2 
   setid <- setid0
-  for(setid in setid0:2){ # Go through training and validation sets
+  setid1 <- 2
+  if(climScen>0) setid1 <- 1 
+  for(setid in setid0:setid1){ # Go through training and validation sets
     toMem3 <- ls()
     dataS <- sample[[setid]] # setid=1 for training, setid=2 for validation  
     cols_in_prebas <- which(colnames(dataS)%in%c(sample$vars_to_prebas,"x","y"))
@@ -904,7 +908,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     print(paste("Spruce = 0 segments", length(which(dataS$spruce==0 & dataS$ba==0))))
     print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
     
-    rcps <- "CurrClim"
+    if(!exists("rcps")) rcps <- "CurrClim"
     if(fmi_from_allas) rcps <- "CurrClim_fmi"
     source("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/functions_IBSCarbon.R", local=T)
     source("~/finruns_to_update/functions.R", local=T)
@@ -914,7 +918,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     byManual <- T
     mortMod <<- 1
     
-    deltaID=1; sampleID=1; sampleX <-dataS;climScen=0;RCP=0; easyInit=FALSE; 
+    deltaID=1; sampleID=1; sampleX <-dataS;RCP=0; easyInit=FALSE; 
     initSoilCreStart=NULL; CO2fixed=0;forceSaveInitSoil=F; cons10run = F; procDrPeat=F;coeffPeat1=-240;coeffPeat2=70;coefCH4 = 0.34; coefN20_1 = 0.23;coefN20_2 = 0.077; landClassUnman=NULL;compHarvX = 0;P0currclim=NA;fT0=NA;TminTmax = NA;toRaster=F; disturbanceON = NA; ingrowth = F; clcut = 1
     
     #if(!fmi_from_allas){
@@ -922,7 +926,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     disturbanceON <- NA# c("fire","wind","bb")
     toMem2 <- ls()
     out <-   runModel(1,sampleID=1, outType = outType, 
-                      RCP=0, rcps = rcps0, 
+                      rcps = rcps0, climScen=0, 
                       harvScen="Base",sampleX = dataS, 
                       harvInten="Base", forceSaveInitSoil=T,
                       disturbanceON = disturbanceON)
@@ -937,14 +941,15 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
 
     print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
     if(fmi_from_allas) rcps <- "CurrClim_fmi"
-    nYears <<- 2024-2015
+    if(climScen==0) nYears <<- 2024-2015
+    if(climScen>0) nYears <<- 2100-2015
     endingYear <<- nYears + startingYear
     clcuts <<- 1
     disturbanceON <- c("fire","wind","bb")
     source("~/finruns_to_update/functions.R", local=T)
     toMem2 <- ls()
     sampleXs <-   runModel(1,sampleID=1, outType = outType, 
-                           RCP=0, rcps = rcps, 
+                           rcps = rcps, climScen = climScen, 
                            harvScen="NoHarv",sampleX = dataS, 
                            harvInten="NoHarv", 
                            disturbanceON = disturbanceON)
@@ -1088,7 +1093,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
 output_stats <- lapply(1:length(rids), function(jx) {
   #     print(paste0("region list: ",which(rids==20),"/",length(rids)))
   calculateStatistics(jx, fmi_from_allas = fmi_from_allas, 
-                      weighted = F)
+                      weighted = weighted)
 })      
 
 save(output_stats, file="testitiedosto.rdata")
