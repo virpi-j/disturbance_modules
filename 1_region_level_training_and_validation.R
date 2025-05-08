@@ -235,6 +235,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
     rm("data.all")
     gc()
   } else {
+    print("No weighting on training set.")
     ni <- sample(1:nrow(data.all), nSegs, replace=F)
     sampleTraining <- data.all[ni,]
   }
