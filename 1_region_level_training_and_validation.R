@@ -1029,9 +1029,10 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
                                  areabb,areabbHarv,yearsSamplebb)
     }
     if(climScen>0){
-      out <- array(0,c(2,nYears),dimnames = list(c("bbHarv","bbAll"),(startingYear+1):endingYear))
+      out <- array(0,c(3,nYears),dimnames = list(c("bbHarv","bbAll","totarea"),(startingYear+1):endingYear))
       out[1,] <- colSums(areaSamplebbHarv)
       out[2,] <- colSums(areaSamplebb)
+      out[3,] <- rep(sum(dataS$area),nYears)
     } else if(climScen==0){
       years <- years[years>2018 & years<2024]
       bb_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","sim_harvested","sim_all")))
