@@ -1111,14 +1111,14 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
             clcut <<- -1
             harvInten <- "NoHarv"
           } 
-          climScen <<- climi
+          climScen <- climi
           print(paste("climScen changed to",climScen))
-          rcps <<- rcpsFile <-paste0(climMod[ClimModid],rcpx[climScen])
+          rcps <<- rcpsFile <-paste0(climMod[ClimModid],rcpx[climi])
           rcpsName <- rcps
-          source("~/finruns_to_update/functions.R", local=T)
+          source("~/finruns_to_update/functions.R")#, local=T)
           toMem2 <- ls()
           sampleXs <-   runModel(1,sampleID=1, outType = outType, #RCP=climScen,
-                                 rcps = rcps, climScen = climScen, 
+                                 rcps = rcps, climScen = climi, 
                                  harvScen = harvScen,
                                  sampleX = dataS, ingrowth=T,
                                  harvInten = harvInten, 
