@@ -827,6 +827,8 @@ ij <- 1
 if(!exists("weighted")) weighted <- F
 
 calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = outputs, climScen=0){
+  print(paste("Run climScen",climScen))
+  climScen0 <- climScen
   set.seed(10)
   toMem <- ls()
   r_noi <- rids[ij]
@@ -943,6 +945,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     rm(list=setdiff(ls(), toMem2))
     gc()
 
+    climScen <- climScen0
     print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
     if(fmi_from_allas) rcps <- "CurrClim_fmi"
     if(climScen==0){
@@ -1109,6 +1112,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
             harvInten <- "NoHarv"
           } 
           climScen <<- climi
+          print(paste("climScen changed to",climScen))
           rcps <<- rcpsFile <-paste0(climMod[ClimModid],rcpx[climScen])
           rcpsName <- rcps
           source("~/finruns_to_update/functions.R", local=T)
@@ -1219,6 +1223,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
 }
 #calculateStatistics(1, fmi_from_allas = fmi_from_allas, weighted = F)
 output_stats <- lapply(1:length(rids), function(jx) {
+  print(paste("ClimScen value", climScen))
   #     print(paste0("region list: ",which(rids==20),"/",length(rids)))
   calculateStatistics(jx, fmi_from_allas = fmi_from_allas, 
                       weighted = weighted, climScen = climScen)
