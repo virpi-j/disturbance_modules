@@ -220,6 +220,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
   gc()
   
   weightedTraining <- weighted
+  print(paste("weighted Training =",weighted))
   if(weightedTraining){
     # damaged segments, max nSegs/3 rows
     damID <- dam_indexs[dam_names=="SBB"]
