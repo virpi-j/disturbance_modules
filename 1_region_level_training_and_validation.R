@@ -926,7 +926,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     disturbanceON <- NA# c("fire","wind","bb")
     toMem2 <- ls()
     out <-   runModel(1,sampleID=1, outType = outType, 
-                      rcps = rcps0, climScen=0, 
+                      rcps = rcps0,  
                       harvScen="Base",sampleX = dataS, 
                       harvInten="Base", forceSaveInitSoil=T,
                       disturbanceON = disturbanceON)
@@ -1111,7 +1111,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
           source("~/finruns_to_update/functions.R", local=T)
           toMem2 <- ls()
           sampleXs <-   runModel(1,sampleID=1, outType = outType, #RCP=climScen,
-                                 rcps = rcps, climScen = climi, 
+                                 rcps = rcps, #climScen = climScen, 
                                  harvScen = harvScen,
                                  sampleX = dataS, 
                                  harvInten = harvInten, 
