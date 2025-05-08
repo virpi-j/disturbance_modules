@@ -1085,8 +1085,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
       rm(list=setdiff(ls(),c(toMem2)))
       #}
       
-    } 
-    else if(climScen>0){
+    } else if(climScen>0){
       nYears <<- 2100-2015
       endingYear <<- nYears + startingYear
       disturbanceON <- c("fire","wind","bb")
@@ -1192,6 +1191,9 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
                                          var ="V", V = colMeans(V))))
           out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
                                          var ="Vspruce", Vspruce = colMeans(Vspruce))))
+          grossgrowth <- apply(sampleXs$region$multiOut[,,"grossGrowth",,1],1:2,mean)[,-1]
+          out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
+                                         var ="grossgrowth", grossgrowth = colMeans(grossgrowth))))
           Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
           Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)[,-1]
           Vrw <- Vrw+Ven
