@@ -1093,15 +1093,15 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
       hi <- 1; climi <- 1
       outputnames <- paste0(rep(HarvScens,each=3),1:3)
       #out <- array(0,c(1+length(outputnames),nYears),dimnames = list(c("totarea",outputnames),(startingYear+1):endingYear))
+
       out <- data.frame()
-      
       for(hi in 1:3){
         for(climi in 1:3){
           harvScen <- HarvScens[hi]
           clcuts <<- 1
           harvInten <- "Base"
           if(harvScen=="NoHarv"){
-            clcuts <<-0
+            clcut <<- -1
             harvInten <- "NoHarv"
           } 
           climScen <- climi
@@ -1112,7 +1112,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
           sampleXs <-   runModel(1,sampleID=1, outType = outType, #RCP=climScen,
                                  rcps = rcps, #climScen = climScen, 
                                  harvScen = harvScen,
-                                 sampleX = dataS, 
+                                 sampleX = dataS, ingrowth=T,
                                  harvInten = harvInten, 
                                  disturbanceON = disturbanceON)
           rm(list=setdiff(ls(),c(toMem2,"sampleXs")))
@@ -1137,6 +1137,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
           Vspruce <- array(unlist(vSpFun(sampleXs$region,2)[,-1]),dim(BA))
           BAspruce <- array(unlist(BASpFun(sampleXs$region,2)[,-1]),dim(BA))
           V <- apply(sampleXs$region$multiOut[,,"V",,1],1:2,sum)
+          grossgrowth <- apply(sampleXs$region$multiOut[,,"grossGrowth",,1],1:2,sum)
           Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
           Vrw <- cbind(Vrw,Vrw[,ncol(Vrw)]) # harvests done next year
           Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)[,-1]
@@ -1188,17 +1189,16 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
           out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
                                          var ="bball", bbHarv = colSums(areaSamplebb))))
           out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
-                                         var ="V", V = colMeans(V))))
+                                         var ="V", V = colSums(V*dataS$area)/sum(dataS$area))))
           out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
-                                         var ="Vspruce", Vspruce = colMeans(Vspruce))))
-          grossgrowth <- apply(sampleXs$region$multiOut[,,"grossGrowth",,1],1:2,mean)[,-1]
+                                         var ="Vspruce", Vspruce = colSums(Vspruce*dataS$area)/sum(dataS$area))))
           out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
-                                         var ="grossgrowth", grossgrowth = colMeans(grossgrowth))))
-          Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
-          Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)[,-1]
+                                         var ="grossgrowth", grossgrowth = colSums(grossgrowth*dataS$area)/sum(dataS$area))))
+          Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)
+          Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)
           Vrw <- Vrw+Ven
           out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
-                                         var ="Vharv", Vharv = colMeans(Vrw))))
+                                         var ="Vharv", Vharv = colSums(Vrw*dataS$area)/sum(dataS$area))))
           print(out[1:10,])
           
         }
