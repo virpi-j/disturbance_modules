@@ -1114,7 +1114,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
           source("~/finruns_to_update/functions.R", local=T)
           toMem2 <- ls()
           sampleXs <-   runModel(1,sampleID=1, outType = outType, #RCP=climScen,
-                                 rcps = rcps, #climScen = climScen, 
+                                 rcps = rcps, climScen = climScen, 
                                  harvScen = harvScen,
                                  sampleX = dataS, ingrowth=T,
                                  harvInten = harvInten, 
@@ -1221,7 +1221,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
 output_stats <- lapply(1:length(rids), function(jx) {
   #     print(paste0("region list: ",which(rids==20),"/",length(rids)))
   calculateStatistics(jx, fmi_from_allas = fmi_from_allas, 
-                      weighted = weighted)
+                      weighted = weighted, climScen = climScen)
 })      
 
 save(output_stats, file="testitiedosto.rdata")
