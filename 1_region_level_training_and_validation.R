@@ -826,7 +826,7 @@ ij <- 1
 #if(!exists("fmi_from_allas")) fmi_from_allas <- T
 if(!exists("weighted")) weighted <- F
 
-calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = outputs, climScen=0){
+calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = outputs, climScen=0, disturbanceON=NA){
   print(paste("Run climScen",climScen))
   climScen0 <- climScen
   set.seed(10)
@@ -927,13 +927,11 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     
     #if(!fmi_from_allas){
     rcps0 = "CurrClim"; harvScen="Base"; harvInten="Base"; forceSaveInitSoil=T
-    disturbanceON <- NA# c("fire","wind","bb")
     toMem2 <- ls()
     out <-   runModel(1,sampleID=1, outType = outType, 
                       rcps = rcps0,  
                       harvScen="Base",sampleX = dataS, 
-                      harvInten="Base", forceSaveInitSoil=T,
-                      disturbanceON = disturbanceON)
+                      harvInten="Base", forceSaveInitSoil=T)
     print("grossgrowth")
     print(round(apply(out$region$multiOut[1,1:10,"grossGrowth",,1],1,sum),1))
     print("V")
@@ -953,7 +951,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
       nYears <<- 2024-2015
       endingYear <<- nYears + startingYear
       clcuts <<- 1
-      disturbanceON <- "bb" # c("fire","wind","bb")
+      #disturbanceON <- "bb" # c("fire","wind","bb")
       source("~/finruns_to_update/functions.R", local=T)
       toMem2 <- ls()
       sampleXs <-   runModel(1,sampleID=1, outType = outType, RCP=climScen,
@@ -1095,7 +1093,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
       print("Run scenarios.")
       nYears <<- 2100-2015
       endingYear <<- nYears + startingYear
-      disturbanceON <- "bb" #c("fire","wind","bb")
+      disturbanceON <- disturbanceON0 #c("fire","wind","bb")
       HarvScens <- c("NoHarv","baseTapio","Base")
       hi <- 1; climi <- 1
       outputnames <- paste0(rep(HarvScens,each=3),1:3)
@@ -1201,7 +1199,12 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
           
         }
       }
-      save(out,file = paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/bbScenarios/output_",r_noi,"_",regnames[r_noi],".rdata"))
+      filee <- 
+      if(is.na(disturbanceON[1])){
+        save(out,file = paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/bbScenarios/output_",r_noi,"_",regnames[r_noi],"_nodist.rdata"))
+      } else {
+        save(out,file = paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/bbScenarios/output_",r_noi,"_",regnames[r_noi],".rdata"))
+      }
     }
     
     rm(list=setdiff(ls(),c(toMem3)))
@@ -1216,7 +1219,7 @@ output_stats <- lapply(1:length(rids), function(jx) {
   print(paste("ClimScen value", climScen))
   #     print(paste0("region list: ",which(rids==20),"/",length(rids)))
   calculateStatistics(jx, fmi_from_allas = fmi_from_allas, 
-                      weighted = weighted, climScen = climScen)
+                      weighted = weighted, climScen = climScen, disturbanceON = disturbanceON0)
 })      
 
 save(output_stats, file="testitiedosto.rdata")
