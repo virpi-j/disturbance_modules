@@ -946,6 +946,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
     if(fmi_from_allas) rcps <- "CurrClim_fmi"
     if(climScen==0){
+      print("Run validation period.")
       nYears <<- 2024-2015
       endingYear <<- nYears + startingYear
       clcuts <<- 1
@@ -953,7 +954,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
       source("~/finruns_to_update/functions.R", local=T)
       toMem2 <- ls()
       sampleXs <-   runModel(1,sampleID=1, outType = outType, RCP=climScen,
-                             rcps = rcps, climScen = climScen, 
+                             rcps = rcps, #climScen = climScen, 
                              harvScen="NoHarv",sampleX = dataS, 
                              harvInten="NoHarv", 
                              disturbanceON = disturbanceON)
@@ -1088,6 +1089,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
       #}
       
     } else if(climScen>0){
+      print("Run scenarios.")
       nYears <<- 2100-2015
       endingYear <<- nYears + startingYear
       disturbanceON <- c("fire","wind","bb")
@@ -1106,7 +1108,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
             clcut <<- -1
             harvInten <- "NoHarv"
           } 
-          climScen <- climi
+          climScen <<- climi
           rcps <<- rcpsFile <-paste0(climMod[ClimModid],rcpx[climScen])
           rcpsName <- rcps
           source("~/finruns_to_update/functions.R", local=T)
