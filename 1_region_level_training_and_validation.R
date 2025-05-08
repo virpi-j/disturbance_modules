@@ -953,7 +953,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
       nYears <<- 2024-2015
       endingYear <<- nYears + startingYear
       clcuts <<- 1
-      disturbanceON <- c("fire","wind","bb")
+      disturbanceON <- "bb" # c("fire","wind","bb")
       source("~/finruns_to_update/functions.R", local=T)
       toMem2 <- ls()
       sampleXs <-   runModel(1,sampleID=1, outType = outType, RCP=climScen,
@@ -1095,7 +1095,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
       print("Run scenarios.")
       nYears <<- 2100-2015
       endingYear <<- nYears + startingYear
-      disturbanceON <- c("fire","wind","bb")
+      disturbanceON <- "bb" #c("fire","wind","bb")
       HarvScens <- c("NoHarv","baseTapio","Base")
       hi <- 1; climi <- 1
       outputnames <- paste0(rep(HarvScens,each=3),1:3)
@@ -1151,16 +1151,6 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
           Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)[,-1]
           Ven <- cbind(Ven,Ven[,ncol(Ven)])
           Vrw <- Vrw+Ven
-          
-          ## wind
-          # all segment areas as initial values for the damages
-          areaSamplew <- array(dataS$area,c(dim(SBBReactionBA))) # Segment areas where damage happened
-          areaSamplew[sampleXs$region$outDist[,,"damvol"]==0] <- 0 # if no damage happened, damaged area = 0
-          #areaSamplebb[SBBReactionBA>0 & Vrw==0] <- areaSamplebb[SBBReactionBA>0 & Vrw==0]*
-          #  SBBReactionBA[SBBReactionBA>0 & Vrw==0]/BA[SBBReactionBA>0 & Vrw==0] # if no clearcut, only part of area damaged
-          areaSamplew[BA==0] <- 0 # if no basal area, no damaged area
-          areaSamplewHarv <- areaSamplew
-          areaSamplewHarv[sampleXs$region$outDist[,,"salvlog"]==0] <- 0
           
           ## bb  
           # all segment areas as initial values for the damages
