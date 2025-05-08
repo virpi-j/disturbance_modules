@@ -1110,7 +1110,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
           rcpsName <- rcps
           source("~/finruns_to_update/functions.R", local=T)
           toMem2 <- ls()
-          sampleXs <-   runModel(1,sampleID=1, outType = outType, RCP=climScen,
+          sampleXs <-   runModel(1,sampleID=1, outType = outType, #RCP=climScen,
                                  rcps = rcps, climScen = climi, 
                                  harvScen = harvScen,
                                  sampleX = dataS, 
