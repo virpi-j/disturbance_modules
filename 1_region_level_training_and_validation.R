@@ -5,7 +5,7 @@ if(!exists("fmi_from_allas")) fmi_from_allas <- F
 if(!exists("weighted")) weighted <- F
 if(!exists("onlyValidationset")) onlyValidationset <- T
 outType <- "testRun"
-neighborIDs <- F
+if(!exists("neighborIDs")) neighborIDs <- F
 toFile <- T
 asParallel <- F
 if(neighborIDs) asParallel <- T
