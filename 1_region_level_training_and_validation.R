@@ -278,57 +278,64 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
   # For the sample, indexes about neighbors
   print(paste("Calculate neighbor information =",neighborIDs))
   if(neighborIDs){# & weighted){
-    dataS <- sampleTraining
-    # all declarations, all coordinates and years of interest
-    ntmp <- which(XYdamages$cuttingrealizationpractice%in%cuttinginpractise | 
-                    XYdamages$forestdamagequalifier==dam_indexs[dam_names=="SBB"] |
-                    XYdamages$forestdamagequalifier==dam_indexs[dam_names=="wind"])
-    yyd<-XYdamages$y[ntmp]
-    xxd<-XYdamages$x[ntmp]
-    dam_idd <- XYdamages$dam_id[ntmp]
-    dam_yeard <- as.numeric(XYdamages$dam_year[ntmp])
-    dam_indd <- XYdamages$forestdamagequalifier[ntmp]
-    dam_crpd <- XYdamages$cuttingrealizationpractice[ntmp] # cutting realisation practise
-    
-    # closest distance and clearcut year for each segment in sample 
-    # closest distance and clearcut year for each segment in sample 
-    # closest distance and clearcut year for each segment in sample 
-    # closest south distance and clearcut yearfor each segment in sample 
-    clearcutNeighbor_SBB <- clearcutNeighbor_wind <- clearcutNeighbor <- clearcutNeighbor_south <- matrix(NA,nSegs,2) 
-    
-    id_ij <- 1
-    ij <- 1
-    print("Start finding neighbor information")
-    timeT <- Sys.time()
-    neighborSets <- sampleSets <- 0
-    
-    #setkey(dataS,segID)
-    #tabX <- merge(data.IDs,dataS) 
-    dimNams <- c("minDist","clearcutYear", "minDist_SBB", "clearcutYear_SBB", "minDist_Wind", "clearcutYear_Wind", "minDist_s", "clearcutYear_s")
-    #  outputNeighbor <- array(0,c(8,nSegs),dimnames = list(dimNams,c(1:nSegs)))
-    timeT <- Sys.time()
-    damCCutInt <- as.integer(dam_crpd%in%cuttinginpractise)
-    damCCutInt[damCCutInt==0] <- 1e12
-    print(paste("CCut obs. n =",length(which(damCCutInt==1))))
-    damBBInt <- as.integer(dam_indd==dam_indexs[dam_names=="SBB"])
-    damBBInt[is.na(damBBInt)] <- 1e12
-    damBBInt[damBBInt==0] <-1e12
-    print(paste("SBB obs. n =",length(which(damBBInt==1))))
-    damWInt <- as.integer(dam_indd==dam_indexs[dam_names=="wind"])
-    damWInt[is.na(damWInt)] <- 1e12
-    damWInt[damWInt==0] <-1e12
-    print(paste("Wind obs. n =",length(which(damWInt==1))))
-    source("../PREBAStesting/0.5_functions.R", local = T)
-    outputNeighbor <- apply(data.table(c(1:nSegs)),1,neighborsAll,dataS=dataS,
-                            damCCutInt=damCCutInt, damBBInt=damBBInt, damWInt=damWInt)
-    outputNeighbor <- data.table(t(outputNeighbor))
-    colnames(outputNeighbor) <- dimNams
-    outputNeighbor[outputNeighbor==1e12] <- NA
-    #rm(list=c("xx","yy","dx"))
-    gc()
-    dataS <- cbind(dataS,outputNeighbor)
+    for(ik in 1:2){
+      if(ik==1) {dataS <- sampleTraining
+      print("neighbors for training set")}
+      if(ik==2){ dataS <- sampleValidation
+      print("neighbors for validation set")}
+      # all declarations, all coordinates and years of interest
+      ntmp <- which(XYdamages$cuttingrealizationpractice%in%cuttinginpractise | 
+                      XYdamages$forestdamagequalifier==dam_indexs[dam_names=="SBB"] |
+                      XYdamages$forestdamagequalifier==dam_indexs[dam_names=="wind"])
+      yyd<-XYdamages$y[ntmp]
+      xxd<-XYdamages$x[ntmp]
+      dam_idd <- XYdamages$dam_id[ntmp]
+      dam_yeard <- as.numeric(XYdamages$dam_year[ntmp])
+      dam_indd <- XYdamages$forestdamagequalifier[ntmp]
+      dam_crpd <- XYdamages$cuttingrealizationpractice[ntmp] # cutting realisation practise
+      
+      # closest distance and clearcut year for each segment in sample 
+      # closest distance and clearcut year for each segment in sample 
+      # closest distance and clearcut year for each segment in sample 
+      # closest south distance and clearcut yearfor each segment in sample 
+      clearcutNeighbor_SBB <- clearcutNeighbor_wind <- clearcutNeighbor <- clearcutNeighbor_south <- matrix(NA,nSegs,2) 
+      
+      id_ij <- 1
+      ij <- 1
+      print("Start finding neighbor information")
+      timeT <- Sys.time()
+      neighborSets <- sampleSets <- 0
+      
+      #setkey(dataS,segID)
+      #tabX <- merge(data.IDs,dataS) 
+      dimNams <- c("minDist","clearcutYear", "minDist_SBB", "clearcutYear_SBB", "minDist_Wind", "clearcutYear_Wind", "minDist_s", "clearcutYear_s")
+      #  outputNeighbor <- array(0,c(8,nSegs),dimnames = list(dimNams,c(1:nSegs)))
+      timeT <- Sys.time()
+      damCCutInt <- as.integer(dam_crpd%in%cuttinginpractise)
+      damCCutInt[damCCutInt==0] <- 1e12
+      print(paste("CCut obs. n =",length(which(damCCutInt==1))))
+      damBBInt <- as.integer(dam_indd==dam_indexs[dam_names=="SBB"])
+      damBBInt[is.na(damBBInt)] <- 1e12
+      damBBInt[damBBInt==0] <-1e12
+      print(paste("SBB obs. n =",length(which(damBBInt==1))))
+      damWInt <- as.integer(dam_indd==dam_indexs[dam_names=="wind"])
+      damWInt[is.na(damWInt)] <- 1e12
+      damWInt[damWInt==0] <-1e12
+      print(paste("Wind obs. n =",length(which(damWInt==1))))
+      source("../PREBAStesting/0.5_functions.R", local = T)
+      outputNeighbor <- apply(data.table(c(1:nSegs)),1,neighborsAll,dataS=dataS,
+                              damCCutInt=damCCutInt, damBBInt=damBBInt, damWInt=damWInt)
+      outputNeighbor <- data.table(t(outputNeighbor))
+      colnames(outputNeighbor) <- dimNams
+      outputNeighbor[outputNeighbor==1e12] <- NA
+      #rm(list=c("xx","yy","dx"))
+      gc()
+      if(ik==1) sampleTraining <- cbind(dataS,outputNeighbor)  
+      if(ik==2) sampleValidation <- cbind(dataS,outputNeighbor)
+    }
   }
   if(!toFile) head(sampleTraining)
+  if(!toFile) head(sampleValidation)
   #samples <- list(sampleTraining, sampleValidation)
   #names(samples) <- c("sampleTraining", "sampleValidation")
   samples <- list(sampleTraining, sampleValidation, damInfo,areatot, vars_to_prebas)
@@ -768,7 +775,7 @@ trainingSetCreation <- function(r_noi, sampleXs, dataS, startingYear=2015, endin
   print(paste("NeighborIDs",neighborIDs))
   if(neighborIDs){
     # add info about neighboring SBB damages  
-    colsNeigh <- c(which(names(dataS)=="minDist"):which(names(dataS)=="clearcutYear_Wind"))
+    colsNeigh <- c((which(names(dataS)=="y")+1):ncol(dataS))
     output <- cbind(output,dataS[,..colsNeigh])
     nvarsSBB <- nvarsSBB+length(colsNeigh)
   }
