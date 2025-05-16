@@ -826,7 +826,8 @@ ij <- 1
 #if(!exists("fmi_from_allas")) fmi_from_allas <- T
 if(!exists("weighted")) weighted <- F
 
-calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = outputs, climScen=0, disturbanceON=NA){
+calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=F,
+                                outputs = outputs, climScen=0, disturbanceON=NA){
   print(paste("Run climScen",climScen))
   climScen0 <- climScen
   set.seed(10)
@@ -834,7 +835,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
   r_noi <- rids[ij]
   r_no <- rnos[r_noi]
   print(paste("Region", r_no,"sample"))
-  sample <- calculateOPSdata(r_noi,nSegs = nSegs, neighborIDs = F, weighted = weighted)
+  sample <- calculateOPSdata(r_noi,nSegs = nSegs, neighborIDs = neighborIDs, weighted = weighted)
   gc()
   
   setid0 <- 1  
@@ -1226,7 +1227,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
 output_stats <- lapply(1:length(rids), function(jx) {
   print(paste("ClimScen value", climScen))
   #     print(paste0("region list: ",which(rids==20),"/",length(rids)))
-  calculateStatistics(jx, fmi_from_allas = fmi_from_allas, 
+  calculateStatistics(jx, fmi_from_allas = fmi_from_allas, neighborIDs=neighborIDs,
                       weighted = weighted, climScen = climScen, disturbanceON = disturbanceON0)
 })      
 
