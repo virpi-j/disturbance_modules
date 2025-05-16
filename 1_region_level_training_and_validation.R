@@ -277,7 +277,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
   #####
   # For the sample, indexes about neighbors
   print(paste("Calculate neighbor information =",neighborIDs))
-  if(neighborIDs & weighted){
+  if(neighborIDs){# & weighted){
     dataS <- sampleTraining
     # all declarations, all coordinates and years of interest
     ntmp <- which(XYdamages$cuttingrealizationpractice%in%cuttinginpractise | 
@@ -946,12 +946,13 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
     climScen <- climScen0
     print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
     if(fmi_from_allas) rcps <- "CurrClim_fmi"
+    
     if(climScen==0){
       print("Run validation period.")
       nYears <<- 2024-2015
       endingYear <<- nYears + startingYear
       clcuts <<- 1
-      #disturbanceON <- "bb" # c("fire","wind","bb")
+      disturbanceON <- disturbanceON0# "bb" # c("fire","wind","bb")
       source("~/finruns_to_update/functions.R", local=T)
       toMem2 <- ls()
       sampleXs <-   runModel(1,sampleID=1, outType = outType, RCP=climScen,
@@ -1102,11 +1103,12 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
       out <- data.frame()
       for(hi in 1:3){
         for(climi in 1:3){
+          toMemiter <- ls()
           harvScen <- HarvScens[hi]
-          clcuts <<- 1
+          clcut <- 1
           harvInten <- "Base"
           if(harvScen=="NoHarv"){
-            clcut <<- -1
+            clcut <- -1
             harvInten <- "NoHarv"
           } 
           climScen <- climi
@@ -1117,7 +1119,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
           toMem2 <- ls()
           sampleXs <-   runModel(1,sampleID=1, outType = outType, #RCP=climScen,
                                  rcps = rcps, climScen = climi, 
-                                 harvScen = harvScen,
+                                 harvScen = harvScen, #clcut = clcut,
                                  sampleX = dataS, ingrowth=T,
                                  harvInten = harvInten, 
                                  disturbanceON = disturbanceON)
@@ -1149,6 +1151,11 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
           Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)[,-1]
           Ven <- cbind(Ven,Ven[,ncol(Ven)])
           Vrw <- Vrw+Ven
+          
+          #id <- 11
+          #V[which(SBBReactionBA[,id]>0),(id-2):(id+3)]
+          #Vrw[which(SBBReactionBA[,id]>0),(id-2):(id+3)]
+          #SBBReactionBA[which(SBBReactionBA[,id]>0),(id-2):(id+3)]
           
           ## bb  
           # all segment areas as initial values for the damages
@@ -1196,7 +1203,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, outputs = ou
           out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
                                          var ="Vharv", Vharv = colSums(Vrw*dataS$area)/sum(dataS$area))))
           print(out[1:10,])
-          
+          rm(list=setdiff(ls(),toMemiter))
+          gc()
         }
       }
       filee <- 
