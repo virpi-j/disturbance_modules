@@ -953,11 +953,12 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
       nYears <<- 2024-2015
       endingYear <<- nYears + startingYear
       clcuts <<- 1
-      disturbanceON <- disturbanceON0# "bb" # c("fire","wind","bb")
+      disturbanceON <- NA
+      if(setid==2) disturbanceON <- disturbanceON0 # "bb" # c("fire","wind","bb")
       source("~/finruns_to_update/functions.R", local=T)
       toMem2 <- ls()
-      sampleXs <-   runModel(1,sampleID=1, outType = outType, RCP=climScen,
-                             rcps = rcps, #climScen = climScen, 
+      sampleXs <-   runModel(1,sampleID=1, outType = outType, 
+                             rcps = rcps, climScen=climScen,
                              harvScen="NoHarv",sampleX = dataS, 
                              harvInten="NoHarv", 
                              disturbanceON = disturbanceON)
