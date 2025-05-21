@@ -1245,6 +1245,7 @@ if(!sbatches){
                         weighted = weighted, climScen = climScen, disturbanceON = disturbanceON0)
   })      
 } else {
+  library(parallel)
   output_stats <- mclapply(1:length(rids), function(jx) {
     print(paste("ClimScen value", climScen))
     #     print(paste0("region list: ",which(rids==20),"/",length(rids)))
