@@ -3,6 +3,7 @@
 if(dev.interactive()) dev.off()
 if(!exists("fmi_from_allas")) fmi_from_allas <- F
 if(!exists("weighted")) weighted <- F
+if(!exists("sbatches")) sbatches <- F
 if(!exists("onlyValidationset")) onlyValidationset <- T
 outType <- "testRun"
 if(!exists("neighborIDs")) neighborIDs <- F
@@ -903,8 +904,9 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
       gc()
       
       # Change file name
-      fmi_vars_PREBAS_file <<- paste0("fmi_varsPREBAS",setX,".rdata")
-      climID_lookup_file <<- paste0("climID_lookupPREBAS",setX,".rdata")
+      setXi <- paste0(setX,"_",r_noi)
+      fmi_vars_PREBAS_file <<- paste0("fmi_varsPREBAS",setXi,".rdata")
+      climID_lookup_file <<- paste0("climID_lookupPREBAS",setXi,".rdata")
       file.rename(list.files(path=workdir, pattern="fmi_vars_", all.files=FALSE,full.names=FALSE)[1],
                   fmi_vars_PREBAS_file)
       file.rename(list.files(path=workdir, pattern="climID_lookup_", all.files=FALSE,full.names=FALSE)[1],
@@ -914,7 +916,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
     
     climatepath_orig = "/scratch/project_2000994/RCP/"
     station_id <- "tmp"
-    if(setX==2) station_id <- "tmp2"
+    if(setX==2) station_id <- paste0("tmp2","_",r_noi)
     #climScen <- 0
     nSegs <- nrow(dataS)#dataS)
     print(paste("Spruce = 0 segments", length(which(dataS$spruce==0 & dataS$ba==0))))
@@ -1230,14 +1232,26 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
   #return(outputs)
   rm(list=setdiff(ls(),c(toMem)))#,"out","outputs")))
   gc()
+  file.remove(paste0(workdir,fmi_vars_PREBAS_file))
+  file.remove(paste0(workdir,climID_lookup_file))
+
 }
 #calculateStatistics(1, fmi_from_allas = fmi_from_allas, weighted = F)
-output_stats <- lapply(1:length(rids), function(jx) {
-  print(paste("ClimScen value", climScen))
-  #     print(paste0("region list: ",which(rids==20),"/",length(rids)))
-  calculateStatistics(jx, fmi_from_allas = fmi_from_allas, neighborIDs=neighborIDs,
-                      weighted = weighted, climScen = climScen, disturbanceON = disturbanceON0)
-})      
+if(!sbatches){
+  output_stats <- lapply(1:length(rids), function(jx) {
+    print(paste("ClimScen value", climScen))
+    #     print(paste0("region list: ",which(rids==20),"/",length(rids)))
+    calculateStatistics(jx, fmi_from_allas = fmi_from_allas, neighborIDs=neighborIDs,
+                        weighted = weighted, climScen = climScen, disturbanceON = disturbanceON0)
+  })      
+} else {
+  output_stats <- mclapply(1:length(rids), function(jx) {
+    print(paste("ClimScen value", climScen))
+    #     print(paste0("region list: ",which(rids==20),"/",length(rids)))
+    calculateStatistics(jx, fmi_from_allas = fmi_from_allas, neighborIDs=neighborIDs,
+                        weighted = weighted, climScen = climScen, disturbanceON = disturbanceON0)
+  }, mc.cores = 5,mc.silent=FALSE)      
+}
 
 save(output_stats, file="testitiedosto.rdata")
 file.remove(paste0(workdir,"fmi_vars_PREBAS.rdata"))
