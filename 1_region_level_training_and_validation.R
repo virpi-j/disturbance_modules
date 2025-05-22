@@ -5,6 +5,7 @@ if(!exists("fmi_from_allas")) fmi_from_allas <- F
 if(!exists("weighted")) weighted <- F
 if(!exists("sbatches")) sbatches <- F
 if(!exists("onlyValidationset")) onlyValidationset <- T
+if(!exists("newSamples")) newSamples <- T # T if generate new samples, F if only run PREBAS with previous samples
 outType <- "testRun"
 if(!exists("neighborIDs")) neighborIDs <- F
 toFile <- T
@@ -835,7 +836,8 @@ ij <- 1
 if(!exists("weighted")) weighted <- F
 
 calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=F,
-                                outputs = outputs, climScen=0, disturbanceON=NA){
+                                outputs = outputs, climScen=0, disturbanceON=NA,
+                                newSamples=T){
   print(paste("Run climScen",climScen))
   climScen0 <- climScen
   set.seed(10)
@@ -843,7 +845,12 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
   r_noi <- rids[ij]
   r_no <- rnos[r_noi]
   print(paste("Region", r_no,"sample"))
-  sample <- calculateOPSdata(r_noi,nSegs = nSegs, neighborIDs = neighborIDs, weighted = weighted)
+  if(newSamples){
+    sample <- calculateOPSdata(r_noi,nSegs = nSegs, neighborIDs = neighborIDs, weighted = weighted)
+  }
+  else{
+    sample <- load(paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/MKIdata/samples_train_valid_",r_noi,".rdata")))
+  }
   gc()
   
   setid0 <- 1  
@@ -1242,7 +1249,8 @@ if(!sbatches){
     print(paste("ClimScen value", climScen))
     #     print(paste0("region list: ",which(rids==20),"/",length(rids)))
     calculateStatistics(jx, fmi_from_allas = fmi_from_allas, neighborIDs=neighborIDs,
-                        weighted = weighted, climScen = climScen, disturbanceON = disturbanceON0)
+                        weighted = weighted, climScen = climScen, 
+                        disturbanceON = disturbanceON0, newSamples = newSamples)
   })      
 } else {
   library(parallel)
@@ -1250,7 +1258,8 @@ if(!sbatches){
     print(paste("ClimScen value", climScen))
     #     print(paste0("region list: ",which(rids==20),"/",length(rids)))
     calculateStatistics(jx, fmi_from_allas = fmi_from_allas, neighborIDs=neighborIDs,
-                        weighted = weighted, climScen = climScen, disturbanceON = disturbanceON0)
+                        weighted = weighted, climScen = climScen, 
+                        disturbanceON = disturbanceON0, newSamples = newSamples)
   }, mc.cores = 5,mc.silent=FALSE)      
 }
 
