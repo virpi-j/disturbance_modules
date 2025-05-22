@@ -849,7 +849,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
     sample <- calculateOPSdata(r_noi,nSegs = nSegs, neighborIDs = neighborIDs, weighted = weighted)
   }
   else{
-    sample <- load(paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/MKIdata/samples_train_valid_",r_noi,".rdata")))
+    sample <- load(paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/MKIdata/samples_train_valid_",r_noi,".rdata"))
   }
   gc()
   
