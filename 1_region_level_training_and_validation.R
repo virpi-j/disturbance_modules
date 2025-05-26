@@ -280,6 +280,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
   # For the sample, indexes about neighbors
   print(paste("Calculate neighbor information =",neighborIDs))
   if(neighborIDs){# & weighted){
+    ik <- 1
     for(ik in 1:2){
       if(ik==1) {dataS <- sampleTraining
       print("neighbors for training set")}
@@ -289,6 +290,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
       ntmp <- which(XYdamages$cuttingrealizationpractice%in%cuttinginpractise | 
                       XYdamages$forestdamagequalifier==dam_indexs[dam_names=="SBB"] |
                       XYdamages$forestdamagequalifier==dam_indexs[dam_names=="wind"])
+      ntmp <- ntmp[order(XYdamages$y[ntmp],XYdamages$x[ntmp],decreasing = T)]
       yyd<-XYdamages$y[ntmp]
       xxd<-XYdamages$x[ntmp]
       dam_idd <- XYdamages$dam_id[ntmp]
