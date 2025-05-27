@@ -334,8 +334,14 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
       outputNeighbor[outputNeighbor==1e12] <- NA
       #rm(list=c("xx","yy","dx"))
       gc()
-      if(ik==1) sampleTraining <- cbind(dataS,outputNeighbor)  
-      if(ik==2) sampleValidation <- cbind(dataS,outputNeighbor)
+      if(ik==1){
+        sampleTraining <- cbind(dataS,outputNeighbor)  
+        save(sampleTraining,file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/MKIdata/sample_train_",r_noi,".rdata"))
+      } 
+      if(ik==2){
+        sampleValidation <- cbind(dataS,outputNeighbor)
+        save(sampleValidation,file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/MKIdata/sample_valid_",r_noi,".rdata"))
+      } 
     }
   }
   if(!toFile) head(sampleTraining)
