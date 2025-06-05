@@ -79,7 +79,7 @@ dam_names <- c("alldeclarations","all","SBB","wind","fire","moose")
 dam_indexs <- c("all","0","1602","1504","1503","1650")
 
 inds <- 1
-calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
+calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, climScen=0){
   toMem <- ls()
   r_no <- rnos[r_noi]
   
@@ -190,73 +190,80 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
   }
   
   ###### combine data.all and XYdam_uniqueSegm
-  
-  # Which columns are in 
-  XYdam_uniqueSegm_names_in <- which(colnames(XYdam_uniqueSegm)%in%vars_to_prebas)
-  dataAll_names_in <- which(vars_to_prebas%in%colnames(XYdam_uniqueSegm))
-  
-  # rows in data.all, which are in XYdam_uniqueSegm data
-  ni <- which((data.all$segID %in% XYdam_uniqueSegm$segID))
-  
-  # for the XYdam_uniqueSegm data, add data.all information
-  tmp <- data.all[ni[match(XYdam_uniqueSegm$segID, data.all$segID[ni])],]
-  nicols <- which(!colnames(XYdam_uniqueSegm)%in%vars_to_prebas)
-  XYcols <- colnames(XYdam_uniqueSegm)[nicols]
-  XYdam_uniqueSegm <- cbind(tmp,XYdam_uniqueSegm[,..nicols])
-  
-  # rows in data.all, which are not in XYdam_uniqueSegm data
-  ni <- which(!(data.all$segID %in% XYdam_uniqueSegm$segID))
-  data.all <- cbind(data.all[ni,],array(0,c(length(ni), length(XYcols))))
-  colnames(data.all) <- colnames(XYdam_uniqueSegm)
-  data.all$dam_year <- sample(yrs,nrow(data.all),replace = T)
-  data.all$dam_id <- data.all$damSegID <- paste0("0",1:nrow(data.all))
-  # Combine the two sets
-  data.all <- rbind(XYdam_uniqueSegm, data.all)
+  if(climScen==0){
+    # Which columns are in 
+    XYdam_uniqueSegm_names_in <- which(colnames(XYdam_uniqueSegm)%in%vars_to_prebas)
+    dataAll_names_in <- which(vars_to_prebas%in%colnames(XYdam_uniqueSegm))
+    
+    # rows in data.all, which are in XYdam_uniqueSegm data
+    ni <- which((data.all$segID %in% XYdam_uniqueSegm$segID))
+    
+    # for the XYdam_uniqueSegm data, add data.all information
+    tmp <- data.all[ni[match(XYdam_uniqueSegm$segID, data.all$segID[ni])],]
+    nicols <- which(!colnames(XYdam_uniqueSegm)%in%vars_to_prebas)
+    XYcols <- colnames(XYdam_uniqueSegm)[nicols]
+    XYdam_uniqueSegm <- cbind(tmp,XYdam_uniqueSegm[,..nicols])
+    
+    # rows in data.all, which are not in XYdam_uniqueSegm data
+    ni <- which(!(data.all$segID %in% XYdam_uniqueSegm$segID))
+    data.all <- cbind(data.all[ni,],array(0,c(length(ni), length(XYcols))))
+    colnames(data.all) <- colnames(XYdam_uniqueSegm)
+    data.all$dam_year <- sample(yrs,nrow(data.all),replace = T)
+    data.all$dam_id <- data.all$damSegID <- paste0("0",1:nrow(data.all))
+    # Combine the two sets
+    data.all <- rbind(XYdam_uniqueSegm, data.all)
+  }
   
   # validation set as a completelly random set
   ni <- sample(1:nrow(data.all), nSegs, replace=F)
   sampleValidation <- data.all[ni,]
   
-  # training set from the rest of segments: 
-  data.all <- data.all[setdiff(1:nrow(data.all),ni),]
-  gc()
-  
-  weightedTraining <- weighted
-  print(paste("weighted Training =",weighted))
-  if(weightedTraining){
-    # damaged segments, max nSegs/3 rows
-    damID <- dam_indexs[dam_names=="SBB"]
-    ni <- which(data.all$forestdamagequalifier==damID)
-    nsDam <- round(nSegs/3)
-    if(length(ni) > nsDam) ni <- ni[sample(1:length(ni), nsDam, replace = F)]
-    sampleTraining <- data.all[ni,]
-    # Sample from outside damaged segments
-    ns <- nSegs - length(ni)
-    ni <- which(!(data.all$forestdamagequalifier%in%c(damID)))
-    ni <- ni[sample(1:length(ni),ns, replace = F)]
-    sampleTraining <- rbind(sampleTraining, data.all[ni,])
-    rm("data.all")
+  if(climScen==0){
+    # training set from the rest of segments: 
+    data.all <- data.all[setdiff(1:nrow(data.all),ni),]
     gc()
-  } else {
-    print("No weighting on training set.")
-    ni <- sample(1:nrow(data.all), nSegs, replace=F)
-    sampleTraining <- data.all[ni,]
-  }
-  
-  # X and y coordinates for the samples
-  setkey(data.IDs,segID)
-  nicols <- setdiff(1:ncol(sampleTraining),which(colnames(sampleTraining)%in%c("x","y")))
-  sampleTraining <- sampleTraining[,..nicols]
-  setkey(sampleTraining,segID)
-  tabX <- merge(data.IDs,sampleTraining) # coords of the segments in sample outside declarations
-  x <- tabX$x[match(sampleTraining$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
-  y <- tabX$y[match(sampleTraining$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
-  sampleTraining[,x:=x]
-  sampleTraining[,y:=y]
-  rm(list=c("x","y","tabX")); gc()
-  if(KUVA){
-    ni <- sample(1:nSegs,1000,replace = F)
-    points(sampleTraining$x[ni],sampleTraining$y[ni], col="blue")
+    
+    weightedTraining <- weighted
+    print(paste("weighted Training =",weighted))
+    if(weightedTraining){
+      # damaged segments, max nSegs/3 rows
+      damID <- dam_indexs[dam_names=="SBB"]
+      ni <- which(data.all$forestdamagequalifier==damID)
+      nsDam <- round(nSegs/3)
+      if(length(ni) > nsDam) ni <- ni[sample(1:length(ni), nsDam, replace = F)]
+      sampleTraining <- data.all[ni,]
+      # Sample from outside damaged segments
+      ns <- nSegs - length(ni)
+      ni <- which(!(data.all$forestdamagequalifier%in%c(damID)))
+      ni <- ni[sample(1:length(ni),ns, replace = F)]
+      sampleTraining <- rbind(sampleTraining, data.all[ni,])
+      rm("data.all")
+      gc()
+    } else {
+      print("No weighting on training set.")
+      ni <- sample(1:nrow(data.all), nSegs, replace=F)
+      sampleTraining <- data.all[ni,]
+    }
+    # X and y coordinates for the samples
+    setkey(data.IDs,segID)
+    nicols <- setdiff(1:ncol(sampleTraining),which(colnames(sampleTraining)%in%c("x","y")))
+    sampleTraining <- sampleTraining[,..nicols]
+    setkey(sampleTraining,segID)
+    tabX <- merge(data.IDs,sampleTraining) # coords of the segments in sample outside declarations
+    x <- tabX$x[match(sampleTraining$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
+    y <- tabX$y[match(sampleTraining$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
+    sampleTraining[,x:=x]
+    sampleTraining[,y:=y]
+    rm(list=c("x","y","tabX")); gc()
+    if(KUVA){
+      ni <- sample(1:nSegs,1000,replace = F)
+      points(sampleTraining$x[ni],sampleTraining$y[ni], col="blue")
+    }
+    if(length(which(is.na(sampleTraining$x)))>0){
+      nNas <- which(is.na(sampleTraining$x))
+      print(sampleTraining[nNas,])
+    }
+    
   }
   setkey(data.IDs,segID)
   nicols <- setdiff(1:ncol(sampleValidation),which(colnames(sampleValidation)%in%c("x","y")))
@@ -272,16 +279,14 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
     points(sampleValidation$x[ni],sampleValidation$y[ni],col="red")
   }
   
-  if(length(which(is.na(sampleTraining$x)))>0){
-    nNas <- which(is.na(sampleTraining$x))
-    print(sampleTraining[nNas,])
-  }
   #####
   # For the sample, indexes about neighbors
   print(paste("Calculate neighbor information =",neighborIDs))
   if(neighborIDs){# & weighted){
-    ik <- 1
-    for(ik in 1:2){
+    iks <- 1:2
+    if(climScen>0) iks <- 2
+    ik <- iks[1]
+    for(ik in iks){
       if(ik==1) {dataS <- sampleTraining
       print("neighbors for training set")}
       if(ik==2){ dataS <- sampleValidation
@@ -344,12 +349,18 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T){
       } 
     }
   }
-  if(!toFile) head(sampleTraining)
+  if(!toFile & climScen==0) head(sampleTraining)
   if(!toFile) head(sampleValidation)
   #samples <- list(sampleTraining, sampleValidation)
   #names(samples) <- c("sampleTraining", "sampleValidation")
-  samples <- list(sampleTraining, sampleValidation, damInfo,areatot, vars_to_prebas)
-  names(samples) <- c("sampleTraining", "sampleValidation","damInfo","areatot","vars_to_prebas")
+  if(climScen==0) {
+    samples <- list(sampleTraining, sampleValidation, damInfo,areatot, vars_to_prebas)
+    names(samples) <- c("sampleTraining", "sampleValidation","damInfo","areatot","vars_to_prebas")
+  }
+  if(climScen>0){
+    samples <- list(sampleValidation, damInfo,areatot, vars_to_prebas)
+    names(samples) <- c("sampleValidation","damInfo","areatot","vars_to_prebas")
+  } 
   if(weighted){
     save(samples, damInfo, 
          file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/MKIdata/samples_train_valid_",r_noi,".rdata"))
@@ -854,11 +865,13 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
   r_no <- rnos[r_noi]
   print(paste("Region", r_no,"sample"))
   if(newSamples){
-    sample <- calculateOPSdata(r_noi,nSegs = nSegs, neighborIDs = neighborIDs, weighted = weighted)
+    sample <- calculateOPSdata(r_noi,nSegs = nSegs, neighborIDs = neighborIDs, weighted = weighted,climScen = climScen)
   } else {
     load(paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/MKIdata/samples_train_valid_",r_noi,".rdata"))
     assign("sample",samples)
-    
+  }
+  
+  if(!newSamples | climScen>0){
     gc()
     
     setid0 <- 1  
@@ -1168,9 +1181,11 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
             any(SBBReactionBA>0)
             Intensitybb <- sampleXs$region$multiOut[,,48,1,2]
             BA <- apply(sampleXs$region$multiOut[,,"BA",,1],1:2,sum)
+            Vmort <- apply(sampleXs$region$multiOut[,,"Vmort",,1],1:2,sum)
             Vspruce <- array(unlist(vSpFun(sampleXs$region,2)[,-1]),dim(BA))
             BAspruce <- array(unlist(BASpFun(sampleXs$region,2)[,-1]),dim(BA))
             V <- apply(sampleXs$region$multiOut[,,"V",,1],1:2,sum)
+            deadwoodVolume <- apply(sampleXs$region$multiOut[,,"DeadWoodVolume",,1],1:2,sum)
             grossgrowth <- apply(sampleXs$region$multiOut[,,"grossGrowth",,1],1:2,sum)
             Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
             Vrw <- cbind(Vrw,Vrw[,ncol(Vrw)]) # harvests done next year
@@ -1228,6 +1243,10 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
             Vrw <- Vrw+Ven
             out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
                                            var ="Vharv", Vharv = colSums(Vrw*dataS$area)/sum(dataS$area))))
+            out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
+                                           var ="Vmort", Vmort = colSums(Vmort*dataS$area)/sum(dataS$area))))
+            out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
+                                           var ="deadwoodVolume", deadwoodVolume = colSums(deadwoodVolume*dataS$area)/sum(dataS$area))))
             print(out[1:10,])
             rm(list=setdiff(ls(),toMemiter))
             gc()
