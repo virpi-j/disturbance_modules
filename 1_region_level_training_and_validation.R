@@ -961,7 +961,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
       mortMod <<- 1
       
       deltaID=1; sampleID=1; sampleX <-dataS;RCP=0; easyInit=FALSE; 
-      initSoilCreStart=NULL; CO2fixed=0;forceSaveInitSoil=F; cons10run = F; procDrPeat=F;coeffPeat1=-240;coeffPeat2=70;coefCH4 = 0.34; coefN20_1 = 0.23;coefN20_2 = 0.077; landClassUnman=NULL;compHarvX = 0;P0currclim=NA;fT0=NA;TminTmax = NA;toRaster=F; disturbanceON = NA; ingrowth = F; clcut = 1
+      initSoilCreStart=NULL; CO2fixed=0;forceSaveInitSoil=F; cons10run = F; procDrPeat=F;coeffPeat1=-240;coeffPeat2=70;coefCH4 = 0.34; coefN20_1 = 0.23;coefN20_2 = 0.077; landClassUnman=NULL;compHarvX = 0;P0currclim=NA;fT0=NA;TminTmax = NA;toRaster=F; ingrowth = F; clcut = 1
       
       #if(!fmi_from_allas){
       rcps0 = "CurrClim"; harvScen="Base"; harvInten="Base"; forceSaveInitSoil=T
