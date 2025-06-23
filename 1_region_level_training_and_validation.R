@@ -865,8 +865,10 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
   r_no <- rnos[r_noi]
   print(paste("Region", r_no,"sample"))
   if(newSamples){
+    print("Generate new sample")
     sample <- calculateOPSdata(r_noi,nSegs = nSegs, neighborIDs = neighborIDs, weighted = weighted,climScen = climScen)
   } else {
+    print("Load sample")
     load(paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/MKIdata/samples_train_valid_",r_noi,".rdata"))
     assign("sample",samples)
   }
@@ -879,6 +881,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
     setid <- setid0
     setid1 <- 2
     if(climScen>0) setid1 <- 1 
+    
     for(setid in setid0:setid1){ # Go through training and validation sets
       toMem3 <- ls()
       dataS <- sample[[setid]] # setid=1 for training, setid=2 for validation  
@@ -1144,12 +1147,12 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
           for(climi in 1:3){
             toMemiter <- ls()
             harvScen <- HarvScens[hi]
-            clcut <- 1
+            #clcut <- 1
             harvInten <- "Base"
-            if(harvScen=="NoHarv"){
-              clcut <- -1
-              harvInten <- "NoHarv"
-            } 
+            #if(harvScen=="NoHarv"){
+            #  clcut <- -1
+            #  harvInten <- "NoHarv"
+            #} 
             climScen <- climi
             print(paste("climScen changed to",climScen))
             rcps <<- rcpsFile <-paste0(climMod[ClimModid],rcpx[climi])
@@ -1158,9 +1161,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
             toMem2 <- ls()
             sampleXs <-   runModel(1,sampleID=1, outType = outType, #RCP=climScen,
                                    rcps = rcps, climScen = climi, 
-                                   harvScen = harvScen, #clcut = clcut,
+                                   harvScen = harvScen, harvInten = harvInten, #clcut = clcut,
                                    sampleX = dataS, ingrowth=T,
-                                   harvInten = harvInten, 
                                    disturbanceON = disturbanceON)
             rm(list=setdiff(ls(),c(toMem2,"sampleXs")))
             gc()
@@ -1193,6 +1195,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
             Ven <- cbind(Ven,Ven[,ncol(Ven)])
             Vrw <- Vrw+Ven
             
+            print("Nonzero harvests?")
+            print(any(Vrw>0))
             #id <- 11
             #V[which(SBBReactionBA[,id]>0),(id-2):(id+3)]
             #Vrw[which(SBBReactionBA[,id]>0),(id-2):(id+3)]
@@ -1247,8 +1251,9 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
                                            var ="Vmort", Vmort = colSums(Vmort*dataS$area)/sum(dataS$area))))
             out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
                                            var ="deadwoodVolume", deadwoodVolume = colSums(deadwoodVolume*dataS$area)/sum(dataS$area))))
-            print(out[1:10,])
-           # print(out[,7])
+            print(head(out))
+            print(tail(out))
+            # print(out[,7])
             rm(list=setdiff(ls(),toMemiter))
             gc()
           }
