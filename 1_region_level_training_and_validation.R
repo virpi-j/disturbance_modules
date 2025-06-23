@@ -1248,6 +1248,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
             out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
                                            var ="deadwoodVolume", deadwoodVolume = colSums(deadwoodVolume*dataS$area)/sum(dataS$area))))
             print(out[1:10,])
+           # print(out[,7])
             rm(list=setdiff(ls(),toMemiter))
             gc()
           }
