@@ -977,10 +977,6 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
       print(round(apply(out$region$multiOut[1,1:10,"grossGrowth",,1],1,sum),1))
       print("V")
       print(round(apply(out$region$multiOut[1,1:10,"V",,1],1,sum),1))
-      #print("BB prob")
-      #print(out$region$multiOut[1,,"Rh/SBBpob[layer_1]",1,2])
-      #print("wind prob")
-      #print(out$region$outDist[1,,"wrisk"])
       rm(list=setdiff(ls(), toMem2))
       gc()
       
@@ -1062,7 +1058,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
         years <- (startingYear+1):endingYear
         nbb <- which(SBBReactionBA>0)
         allDamagesbb <- NA
-        if(length(nbb>0)){
+        if(FALSE & length(nbb>0)){
           areabb <- array(dataS$area,c(dim(SBBReactionBA)))[SBBReactionBA>0] # Segment areas where damage happened
           areabbHarv <- areaSamplebbHarv[SBBReactionBA>0]
           yearsSamplebb <- t(array(years, c(dim(SBBReactionBA)[c(2,1)])))[SBBReactionBA>0] # years for damage
@@ -1183,19 +1179,28 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
             any(SBBReactionBA>0)
             Intensitybb <- sampleXs$region$multiOut[,,48,1,2]
             BA <- apply(sampleXs$region$multiOut[,,"BA",,1],1:2,sum)
+            # BA_1 to calculate how big area actually died by sbb
+            BA_1 <- apply(sampleXs$region$multiOut[,,"BA",,1],1:2,sum)[,-ncol(BA)]
+            BA_1 <- cbind(BA_1[,ncol(BA_1)],BA_1)
             Vmort <- apply(sampleXs$region$multiOut[,,"Vmort",,1],1:2,sum)
             Vspruce <- array(unlist(vSpFun(sampleXs$region,2)[,-1]),dim(BA))
             BAspruce <- array(unlist(BASpFun(sampleXs$region,2)[,-1]),dim(BA))
             V <- apply(sampleXs$region$multiOut[,,"V",,1],1:2,sum)
             deadwoodVolume <- apply(sampleXs$region$multiOut[,,"DeadWoodVolume",,1],1:2,sum)
             grossgrowth <- apply(sampleXs$region$multiOut[,,"grossGrowth",,1],1:2,sum)
-            Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
-            Vrw <- cbind(Vrw,Vrw[,ncol(Vrw)]) # harvests done next year
-            Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)[,-1]
-            Ven <- cbind(Ven,Ven[,ncol(Ven)])
+            harvNextYear <- T
+            if(harvNextYear){
+              Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
+              Vrw <- cbind(Vrw,Vrw[,ncol(Vrw)]) # harvests done next year
+              Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)[,-1]
+              Ven <- cbind(Ven,Ven[,ncol(Ven)])
+            } else {
+              Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)
+              Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)
+            }
             Vrw <- Vrw+Ven
             
-            print("Nonzero harvests?")
+            print("Any nonzero harvests?")
             print(any(Vrw>0))
             #id <- 11
             #V[which(SBBReactionBA[,id]>0),(id-2):(id+3)]
@@ -1211,12 +1216,14 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
             areaSamplebb[BA==0] <- 0 # if no basal area, no damaged area
             areaSamplebbHarv <- areaSamplebb
             areaSamplebbHarv[Vrw==0] <- 0
+            areaSampleActualbbdamage <- areaSamplebb*SBBReactionBA/BA_1
+            areaSampleActualbbdamage[BA_1==0] <- 0
             ##
             
             years <- (startingYear+1):endingYear
             nbb <- which(SBBReactionBA>0)
             allDamagesbb <- NA
-            if(length(nbb>0)){
+            if(FALSE){# length(nbb)>0){
               areabb <- array(dataS$area,c(dim(SBBReactionBA)))[SBBReactionBA>0] # Segment areas where damage happened
               areabbHarv <- areaSamplebbHarv[SBBReactionBA>0]
               yearsSamplebb <- t(array(years, c(dim(SBBReactionBA)[c(2,1)])))[SBBReactionBA>0] # years for damage
@@ -1231,11 +1238,13 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
                                          damageIntenSamplebb,damageBASamplebb,BASamplebb,
                                          areabb,areabbHarv,yearsSamplebb)
             } 
-            if(hi==1 & climi==1) out <- data.table(c(scen = "all",var="all", totArea = rep(sum(dataS$area),nYears)))
+            if(hi==1 & climi==1) out <- data.table(c(scen = "all",var="area", totArea = rep(sum(dataS$area),nYears)))
             out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
-                                           var ="bbHarv", bbHarv = colSums(areaSamplebbHarv))))
+                                           var ="bbdamage", bbHarv = colSums(areaSampleActualbbdamage))))
             out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
-                                           var ="bball", bbHarv = colSums(areaSamplebb))))
+                                           var ="bbHarvsegm", bbHarv = colSums(areaSamplebbHarv))))
+            out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
+                                           var ="bbsegm", bbHarv = colSums(areaSamplebb))))
             out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
                                            var ="V", V = colSums(V*dataS$area)/sum(dataS$area))))
             out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
@@ -1272,9 +1281,10 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
   }#return(outputs)
   rm(list=setdiff(ls(),c(toMem)))#,"out","outputs")))
   gc()
-  file.remove(paste0(workdir,fmi_vars_PREBAS_file))
-  file.remove(paste0(workdir,climID_lookup_file))
-
+  if(fmi_from_allas){
+    file.remove(paste0(workdir,fmi_vars_PREBAS_file))
+    file.remove(paste0(workdir,climID_lookup_file))
+  }
 }
 #calculateStatistics(1, fmi_from_allas = fmi_from_allas, weighted = F)
 if(!sbatches){
