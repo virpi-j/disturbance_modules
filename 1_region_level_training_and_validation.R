@@ -1209,8 +1209,11 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
             #areaSamplebb[SBBReactionBA>0 & Vrw==0] <- areaSamplebb[SBBReactionBA>0 & Vrw==0]*
             #  SBBReactionBA[SBBReactionBA>0 & Vrw==0]/BA[SBBReactionBA>0 & Vrw==0] # if no clearcut, only part of area damaged
             areaSamplebb[BA==0] <- 0 # if no basal area, no damaged area
+            
             areaSamplebbHarv <- areaSamplebb
-            areaSamplebbHarv[Vrw==0] <- 0
+            areaSamplebbHarv[sampleXs$region$outDist[,,"mgmtreact"]==0]<-0
+            #areaSamplebbHarv[Vrw==0] <- 0
+            
             areaSampleActualbbdamage <- areaSamplebb*SBBReactionBA/BA_1
             areaSampleActualbbdamage[BA_1==0] <- 0
             ##
@@ -1235,11 +1238,11 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
             } 
             if(hi==1 & climi==1) out <- data.table(c(scen = "all",var="area", totArea = rep(sum(dataS$area),nYears)))
             out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
-                                           var ="bbdamage", bbHarv = colSums(areaSampleActualbbdamage))))
+                                           var ="bbdamage", bbdamage = colSums(areaSampleActualbbdamage))))
             out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
-                                           var ="bbHarvsegm", bbHarv = colSums(areaSamplebbHarv))))
+                                           var ="bbHarvsegm", bbHarvsegm = colSums(areaSamplebbHarv))))
             out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
-                                           var ="bbsegm", bbHarv = colSums(areaSamplebb))))
+                                           var ="bbsegm", bbsegm = colSums(areaSamplebb))))
             out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
                                            var ="V", V = colSums(V*dataS$area)/sum(dataS$area))))
             out <- cbind(out, data.table(c(scen = paste0(harvScen,"_clim",climScen),
