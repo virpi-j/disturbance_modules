@@ -1143,12 +1143,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
           for(climi in 1:3){
             toMemiter <- ls()
             harvScen <- HarvScens[hi]
-            #clcut <- 1
             harvInten <- "Base"
-            #if(harvScen=="NoHarv"){
-            #  clcut <- -1
-            #  harvInten <- "NoHarv"
-            #} 
             climScen <- climi
             print(paste("climScen changed to",climScen))
             rcps <<- rcpsFile <-paste0(climMod[ClimModid],rcpx[climi])
