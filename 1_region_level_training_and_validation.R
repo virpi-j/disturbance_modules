@@ -1134,7 +1134,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
         endingYear <<- nYears + startingYear
         disturbanceON <- disturbanceON0 #c("fire","wind","bb")
         HarvScens <- c("NoHarv","baseTapio","Base")
-        hi <- 1; climi <- 1
+        hi <- 3; climi <- 1
         outputnames <- paste0(rep(HarvScens,each=3),1:3)
         #out <- array(0,c(1+length(outputnames),nYears),dimnames = list(c("totarea",outputnames),(startingYear+1):endingYear))
         
