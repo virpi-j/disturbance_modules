@@ -1010,6 +1010,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
         print(sampleXs$region$outDist[1,1:6,"wrisk"])
         
         print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
+        #which(sampleXs$region$outDist[,,8]==1,arr.ind=T)
         #print("SMIs:")
         #print(sampleXs$region$multiOut[1,,"NEP/SMI[layer_1]",1,2])
         #print("BBprob:")
@@ -1030,8 +1031,10 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
         V <- apply(sampleXs$region$multiOut[,,"V",,1],1:2,sum)
         Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
         Vrw <- cbind(Vrw,Vrw[,ncol(Vrw)]) # harvests done next year
+        Vrw <- pmax(Vrw,apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum))
         Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)[,-1]
         Ven <- cbind(Ven,Ven[,ncol(Ven)])
+        Ven <- pmax(Ven,apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum))
         Vrw <- Vrw+Ven
         
         ## wind
@@ -1187,8 +1190,10 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
             if(harvNextYear){
               Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)[,-1]
               Vrw <- cbind(Vrw,Vrw[,ncol(Vrw)]) # harvests done next year
+              Vrw <- pmax(Vrw,apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum))
               Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)[,-1]
               Ven <- cbind(Ven,Ven[,ncol(Ven)])
+              Ven <- pmax(Ven,apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum))
             } else {
               Vrw <- apply(sampleXs$region$multiOut[,,"VroundWood",,1],1:2,sum)
               Ven <- apply(sampleXs$region$multiEnergyWood[,,,1],1:2,sum)
