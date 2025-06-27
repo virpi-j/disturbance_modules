@@ -139,7 +139,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
   # Table for saving the damage infor
   damInfo <- array(0,c(8,length(yrs)),
                    dimnames = list(c("alldeclarea","alldeclclctarea","SBBarea","SBBclctarea","windarea",
-                                     "windclctarea","fireclctarea","firearea"),paste0("Year",yrs)))
+                                     "windclctarea","firearea","fireclctarea"),paste0("Year",yrs)))
   for(y in 1:length(yrs)) damInfo[1,y] <- sum(XYdam_uniqueSegm$area[which(XYdam_uniqueSegm$dam_year==yrs[y])])
   for(y in 1:length(yrs)) damInfo[2,y] <- sum(XYdam_uniqueSegm$area[which(XYdam_uniqueSegm$dam_year==yrs[y] & XYdam_uniqueSegm$cuttingrealizationpractice%in%cuttinginpractise)])
   for(y in 1:length(yrs)) damInfo[3,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="SBB")])
@@ -859,7 +859,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
                                 newSamples=T){
   print(paste("Run climScen",climScen))
   climScen0 <- climScen
-  set.seed(10)
+  if(weighted) set.seed(10) # for training and testing, keep the samples same
   toMem <- ls()
   r_noi <- rids[ij]
   r_no <- rnos[r_noi]
@@ -1148,6 +1148,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
             harvScen <- HarvScens[hi]
             harvInten <- "Base"
             climScen <- climi
+            clcuts <<- 1
             print(paste("climScen changed to",climScen))
             rcps <<- rcpsFile <-paste0(climMod[ClimModid],rcpx[climi])
             rcpsName <- rcps
@@ -1216,17 +1217,17 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
             areaSamplebb[BA==0] <- 0 # if no basal area, no damaged area
             
             areaSamplebbHarv <- areaSamplebb
-            areaSamplebbHarv[sampleXs$region$outDist[,,"mgmtreact"]==0]<-0
-            #areaSamplebbHarv[Vrw==0] <- 0
+            #areaSamplebbHarv[sampleXs$region$outDist[,,"mgmtreact"]==0]<-0
+            areaSamplebbHarv[Vrw==0] <- 0
             
             areaSampleActualbbdamage <- areaSamplebb*SBBReactionBA/BA_1
             areaSampleActualbbdamage[BA_1==0] <- 0
             ##
             
-            years <- (startingYear+1):endingYear
             nbb <- which(SBBReactionBA>0)
-            allDamagesbb <- NA
             if(FALSE){# length(nbb)>0){
+              years <- (startingYear+1):endingYear
+              allDamagesbb <- NA
               areabb <- array(dataS$area,c(dim(SBBReactionBA)))[SBBReactionBA>0] # Segment areas where damage happened
               areabbHarv <- areaSamplebbHarv[SBBReactionBA>0]
               yearsSamplebb <- t(array(years, c(dim(SBBReactionBA)[c(2,1)])))[SBBReactionBA>0] # years for damage
@@ -1281,12 +1282,13 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
       rm(list=setdiff(ls(),c(toMem3)))
       gc()
     }
-  }#return(outputs)
-  rm(list=setdiff(ls(),c(toMem)))#,"out","outputs")))
-  gc()
-  if(fmi_from_allas){
-    file.remove(paste0(workdir,fmi_vars_PREBAS_file))
-    file.remove(paste0(workdir,climID_lookup_file))
+    #return(outputs)
+    rm(list=setdiff(ls(),c(toMem)))#,"out","outputs")))
+    gc()
+    if(fmi_from_allas){
+      file.remove(paste0(workdir,fmi_vars_PREBAS_file))
+      file.remove(paste0(workdir,climID_lookup_file))
+    }
   }
 }
 #calculateStatistics(1, fmi_from_allas = fmi_from_allas, weighted = F)
