@@ -226,7 +226,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
   # validation set as a completelly random set
   ni <- sample(1:nrow(data.all), nSegs, replace=F)
   sampleValidation <- data.all[ni,]
-  print()
+  
   if(climScen==0){
     # training set from the rest of segments: 
     data.all <- data.all[setdiff(1:nrow(data.all),ni),]
@@ -367,8 +367,8 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     names(samples) <- c("sampleTraining", "sampleValidation","damInfo","areatot","vars_to_prebas")
   }
   if(climScen>0){
-    samples <- list(sampleValidation, damInfo,areatot, vars_to_prebas)
-    names(samples) <- c("sampleValidation","damInfo","areatot","vars_to_prebas")
+    samples <- list(sampleValidation, areatot, vars_to_prebas)
+    names(samples) <- c("sampleValidation","areatot","vars_to_prebas")
   } 
   if(weighted){
     save(samples, damInfo, 
