@@ -17,7 +17,7 @@ regnames <- c("Uusimaa","Ahvenanmaa","Keski-Pohjanmaa","Pirkanmaa","Etela-Karjal
               "Pohjois-Savo","Lappi_E","Lappi_P","Kanta-Hame","Pohjanmaa","Varsinais-Suomi",
               "Etela-Pohjanmaa","Paijat-Hame","Satakunta","Kymenlaakso",
               "Kainuu","Etela-Savo","Pohjois-Karjala","Pohjois-Pohjanmaa")
-r_noi <- r_no <- 4
+r_noi <- r_no <- 1
 rnos <- c(1:8,8:19)
 
 # path to save the outputs
@@ -37,7 +37,7 @@ outputStats <- array(0,c(8,1+max(dam_years)-min(dam_years),length(regs)+1),
                                      paste0("year",dam_years),c(regnames[regs],"WholeCountry")))
 
 library(sp)
-library(rgdal)
+#library(rgdal)
 
 upm <- cbind(c(61.068067045391004, 28.239737695831963),c(61.161953, 26.820275), c(60.967942, 26.671960),
              c(60.778085, 26.890481),c(61.12872381073421, 28.476726026705737),
@@ -55,8 +55,10 @@ upms <- coordinates(spTransform(xy, CRS(paste("+proj=utm +zone=",35," ellps=GRS8
 #extent(res)
 
 
-DeclToRaster <- F
+DeclToRaster <- T # T if update the declaration database
+if(DeclToRaster) dam_years <- 2015:2024
 
+r_noi <- 1
 #disturbance_extract <- function(r_noi){
 for(r_noi in 1:length(regs)){
   r_no <- rnos[regs[r_noi]]
@@ -86,69 +88,6 @@ for(r_noi in 1:length(regs)){
   rm(dam)
   gc()
 
-  if(r_noi==4){
-    if(FALSE){ 
-      # read region level segments used in PREBAS runs
-      #CSCrun<-T
-      load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/data.all_maakunta_",r_no,".rdata"))
-      data.all$segID <- data.all$maakuntaID
-      data.all <- data.all[segID!=0,c("segID","age","ba","pine","spruce","birch")]
-      setkey(data.all,segID)
-      gc()
-      
-      setwd("/scratch/project_2000994/PREBASruns/PREBAStesting/")
-      load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
-      data.IDs$segID <- data.IDs$maakuntaID
-      data.IDs <- data.IDs[segID!=0]
-      setkey(data.IDs,segID)
-      gc()
-      
-      tabX <- merge(data.IDs,data.all) # coords of the segments
-      rm(list=c("data.IDs","data.all"))
-      gc()
-      colnames(tabX)[colnames(tabX)=="x.x"]<-"x"
-      colnames(tabX)[colnames(tabX)=="y.x"]<-"y"
-      crsX <- ("+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
-      #bbox<-st_bbox(tmp)
-      #tabX<-tabX[(tabX$x>=bbox[1] & tabX$x<=bbox[3] & tabX$y>=bbox[2] &tabX$y <=bbox[4]),]
-      gc()
-      pts <- vect(cbind(tabX$x,tabX$y),crs = crsX)
-      #values(pts) <- data.table(segID=tabX$segID, id=1:nrow(tabX),x=tabX$x,y=tabX$y)
-      values(pts) <- tabX
-      rm(tabX)
-      gc()
-      
-      v <- vect(tmp)
-      ntmp <- ncol(tmp)
-      values(v)[ntmp-1] <- dam_year
-      names(v)[ntmp-1] <- "dam_year"
-      rm(list=c("tmp","dam_year"))
-      gc()
-      crs(v) <- crs(pts)
-      values(v)[ntmp] <- data.table(dam_id = 1:nrow(v))
-      gc()
-      
-      
-      #XYdamages <- as.data.table(intersect(v[which(values(v)[,"dam_year"]=="2019"),], pts))
-      XYdamages <- as.data.table(intersect(v, pts))
-    }
-    
-    tmp <- cbind(tmp[,c("forestdamagequalifier","cuttingpurpose","cuttingrealizationpractice")],dam_year=dam_year,
-                 st_coordinates(st_centroid(tmp)))
-    distUPM <- array(1e12,c(nrow(tmp),nrow(upms)))
-    for(ij in 1:nrow(upms)){
-      distUPM[,ij] <- sqrt(rowSums((st_coordinates(st_centroid(tmp$geometry))-t(array(upms[ij,],c(2,nrow(tmp)))))^2))/1000
-    }
-    par(mfrow=c(2,1))
-    dd <- apply(distUPM,1,min)
-    a <- hist(dd,xlab="dist from factory",main="declarations")
-    ni <- which(tmp$cuttingrealizationpractice%in%clearcuts)
-    b <- hist(dd[ni], breaks = a$breaks,xlab="dist from factory",main="clearcut declarations")
-    par(mfrow=c(1,1))
-    #plot(apply(distUPM,1,min), tmp$cuttingrealizationpractice, pch=19)
-    plot(st_centroid(tmp$geometry))
-    plot(st_centroid(tmp$geometry[which(dd>40)]),add=T,col="red",pch=19)
-  }
   ti <- 1
   
   for(ti in 1:length(dam_years)){
@@ -218,6 +157,7 @@ for(r_noi in 1:length(regs)){
     #dam <- dam[as.numeric(dam_year)>=2016-5]
     #dam_year <- dam_year[dam]#substr(tmp$declarationarrivaldate[dam],1,4)
     v <- vect(tmp)
+    #v <- st_as_sf(tmp)
     ntmp <- ncol(tmp)
     values(v)[ntmp-1] <- dam_year
     names(v)[ntmp-1] <- "dam_year"
@@ -226,11 +166,13 @@ for(r_noi in 1:length(regs)){
     crs(v) <- crs(pts)
     values(v)[ntmp] <- data.table(dam_id = 1:nrow(v))
     gc()
-    
+    rm(list="xy")
+    gc()
     
     #XYdamages <- as.data.table(intersect(v[which(values(v)[,"dam_year"]=="2019"),], pts))
+    #XYdamages <- as.data.table(intersect(v[which(values(v)[,"dam_year"]%in%c(2016:2024)),], pts))
     XYdamages <- as.data.table(intersect(v, pts))
-    #print(head(XYdamages))
+    print(head(XYdamages))
     #XYdamages <- XYdamages[which(XYdamages$maingroup%in%c("1","2")),] # forest land and poorly productive forest land only
     
     rm(list=c("v","pts"))

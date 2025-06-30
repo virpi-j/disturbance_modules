@@ -86,14 +86,6 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
   print(paste("region",r_no))
   print(paste("Neighbor information =",neighborIDs))
   
-  fname <- paste0("DeclaredDamages_",dam_names[inds],"_rno",r_no,"_",regnames[r_noi],".rdata")
-  load(file=paste0(savepath,"/",fname))
-  print(paste("File",fname,"opened"))
-  
-  XYdamages <- XYdamages[dam_year>2018 & dam_year<2024,]
-  XYdamages <- XYdamages[which(!is.na(pine)&!is.na(spruce)&!is.na(birch)),]
-  gc()
-  
   # PREBAS run for a sample
   landClassX <- 1:2
   #    devtools::source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/finRuns/Rsrc/settings.r")
@@ -101,55 +93,66 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
   vars_to_prebas <- colnames(data.all)
   areatot <- sum(data.all$area)
   
-  IDsUniq <- unique(XYdamages[,c("dam_id","segID")])
-  IDsUniq[,damSegID:=1:nrow(IDsUniq)]
-  
-  # Give segments that are split with declaration polygons, a unique name
-  XYdamages[,damSegID := match(paste(XYdamages$dam_id,XYdamages$segID),
-                               paste(IDsUniq$dam_id,IDsUniq$segID))]
-  areas <- XYdamages[, .N, by = list(damSegID)]
-  
-  XYdam_uniqueSegm <- XYdamages[XYdamages[,.I[which.max(spruce)], by=damSegID]$V1] # one row for each segment
-  XYdam_uniqueSegm[,area := areas[match(areas$damSegID, XYdam_uniqueSegm$damSegID),N]*16^2/100^2]
-  
-  #if(weighted) tt <- tt[tt$dam_year>=2019,]
-  XYdam_uniqueSegm <- XYdam_uniqueSegm[segID%in%data.all$segID,] # some damage polygons are outside the landclasses 1:2
-  gc()
-  
-  # columns that are not in XYdam tables
-  not_in_XYdam_uniqueSegm <- colnames(data.all)[which(!(colnames(data.all)%in%
-                                                          colnames(XYdam_uniqueSegm)))]
-  # find data for these columns from data.all
-  XYdam_uniqueSegm <- cbind(XYdam_uniqueSegm,
-                            data.all[match(XYdam_uniqueSegm$segID,data.all$segID),..not_in_XYdam_uniqueSegm])
-  
-  ######################### clearcuts?
-  # types of cuttings classified as clearcut
-  cuttinginpractise <- c(5, 8, 16, 17, 19, 21, 22, 24)
-  yrs <- sort(as.numeric(unique(XYdam_uniqueSegm$dam_year)))
-  
-  # function for yearly damaged areas
-  areasDam <- function(x,id) sum(XYdam_uniqueSegm$area[
-    which(XYdam_uniqueSegm$forestdamagequalifier==id & XYdam_uniqueSegm$dam_year==x)])
-  # function for yearly damaged areas that are clearcut
-  areasDamClct <- function(x,id) sum(XYdam_uniqueSegm$area[
-    which(XYdam_uniqueSegm$forestdamagequalifier==id & XYdam_uniqueSegm$dam_year==x  & 
-            XYdam_uniqueSegm$cuttingrealizationpractice%in%cuttinginpractise)])
-  
-  # Table for saving the damage infor
-  damInfo <- array(0,c(8,length(yrs)),
-                   dimnames = list(c("alldeclarea","alldeclclctarea","SBBarea","SBBclctarea","windarea",
-                                     "windclctarea","firearea","fireclctarea"),paste0("Year",yrs)))
-  for(y in 1:length(yrs)) damInfo[1,y] <- sum(XYdam_uniqueSegm$area[which(XYdam_uniqueSegm$dam_year==yrs[y])])
-  for(y in 1:length(yrs)) damInfo[2,y] <- sum(XYdam_uniqueSegm$area[which(XYdam_uniqueSegm$dam_year==yrs[y] & XYdam_uniqueSegm$cuttingrealizationpractice%in%cuttinginpractise)])
-  for(y in 1:length(yrs)) damInfo[3,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="SBB")])
-  for(y in 1:length(yrs)) damInfo[4,y] <- areasDamClct(yrs[y],dam_indexs[which(dam_names=="SBB")])
-  for(y in 1:length(yrs)) damInfo[5,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="wind")])
-  for(y in 1:length(yrs)) damInfo[6,y] <- areasDamClct(yrs[y],dam_indexs[which(dam_names=="wind")])
-  for(y in 1:length(yrs)) damInfo[7,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="fire")])
-  for(y in 1:length(yrs)) damInfo[8,y] <- areasDamClct(yrs[y],dam_indexs[which(dam_names=="fire")])
-  #if(weighted) save(damInfo,file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/damInfo_",r_noi,".rdata"))
-  
+  if(climScen==0){
+    
+    fname <- paste0("DeclaredDamages_",dam_names[inds],"_rno",r_no,"_",regnames[r_noi],".rdata")
+    load(file=paste0(savepath,"/",fname))
+    print(paste("File",fname,"opened"))
+    
+    XYdamages <- XYdamages[dam_year>2018 & dam_year<2024,]
+    XYdamages <- XYdamages[which(!is.na(pine)&!is.na(spruce)&!is.na(birch)),] # remove data where there was NAs
+    gc()
+    
+    IDsUniq <- unique(XYdamages[,c("dam_id","segID")])
+    IDsUniq[,damSegID:=1:nrow(IDsUniq)]
+    
+    # Give segments that are split with declaration polygons, a unique name
+    XYdamages[,damSegID := match(paste(XYdamages$dam_id,XYdamages$segID),
+                                 paste(IDsUniq$dam_id,IDsUniq$segID))]
+    areas <- XYdamages[, .N, by = list(damSegID)]
+    
+    XYdam_uniqueSegm <- XYdamages[XYdamages[,.I[which.max(spruce)], by=damSegID]$V1] # one row for each segment
+    XYdam_uniqueSegm[,N := areas[match(areas$damSegID, XYdam_uniqueSegm$damSegID),"N"]]
+    XYdam_uniqueSegm[,area := N*16^2/100^2]
+    
+    #if(weighted) tt <- tt[tt$dam_year>=2019,]
+    XYdam_uniqueSegm <- XYdam_uniqueSegm[segID%in%data.all$segID,] # some damage polygons are outside the landclasses 1:2
+    gc()
+    
+    # columns that are not in XYdam tables
+    not_in_XYdam_uniqueSegm <- colnames(data.all)[which(!(colnames(data.all)%in%
+                                                            colnames(XYdam_uniqueSegm)))]
+    # find data for these columns from data.all
+    XYdam_uniqueSegm <- cbind(XYdam_uniqueSegm,
+                              data.all[match(XYdam_uniqueSegm$segID,data.all$segID),..not_in_XYdam_uniqueSegm])
+    
+    ######################### clearcuts?
+    # types of cuttings classified as clearcut
+    cuttinginpractise <- c(5, 8, 16, 17, 19, 21, 22, 24)
+    yrs <- sort(as.numeric(unique(XYdam_uniqueSegm$dam_year)))
+    
+    # function for yearly damaged areas
+    areasDam <- function(x,id) sum(XYdam_uniqueSegm$area[
+      which(XYdam_uniqueSegm$forestdamagequalifier==id & XYdam_uniqueSegm$dam_year==x)])
+    # function for yearly damaged areas that are clearcut
+    areasDamClct <- function(x,id) sum(XYdam_uniqueSegm$area[
+      which(XYdam_uniqueSegm$forestdamagequalifier==id & XYdam_uniqueSegm$dam_year==x  & 
+              XYdam_uniqueSegm$cuttingrealizationpractice%in%cuttinginpractise)])
+    
+    # Table for saving the damage infor
+    damInfo <- array(0,c(8,length(yrs)),
+                     dimnames = list(c("alldeclarea","alldeclclctarea","SBBarea","SBBclctarea","windarea",
+                                       "windclctarea","firearea","fireclctarea"),paste0("Year",yrs)))
+    for(y in 1:length(yrs)) damInfo[1,y] <- sum(XYdam_uniqueSegm$area[which(XYdam_uniqueSegm$dam_year==yrs[y])])
+    for(y in 1:length(yrs)) damInfo[2,y] <- sum(XYdam_uniqueSegm$area[which(XYdam_uniqueSegm$dam_year==yrs[y] & XYdam_uniqueSegm$cuttingrealizationpractice%in%cuttinginpractise)])
+    for(y in 1:length(yrs)) damInfo[3,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="SBB")])
+    for(y in 1:length(yrs)) damInfo[4,y] <- areasDamClct(yrs[y],dam_indexs[which(dam_names=="SBB")])
+    for(y in 1:length(yrs)) damInfo[5,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="wind")])
+    for(y in 1:length(yrs)) damInfo[6,y] <- areasDamClct(yrs[y],dam_indexs[which(dam_names=="wind")])
+    for(y in 1:length(yrs)) damInfo[7,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="fire")])
+    for(y in 1:length(yrs)) damInfo[8,y] <- areasDamClct(yrs[y],dam_indexs[which(dam_names=="fire")])
+    #if(weighted) save(damInfo,file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/damInfo_",r_noi,".rdata"))
+  }
   ########################
   #nt <- 1:nrow(XYdam_uniqueSegm)
   load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
@@ -198,18 +201,24 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     # rows in data.all, which are in XYdam_uniqueSegm data
     ni <- which((data.all$segID %in% XYdam_uniqueSegm$segID))
     
-    # for the XYdam_uniqueSegm data, add data.all information
-    tmp <- data.all[ni[match(XYdam_uniqueSegm$segID, data.all$segID[ni])],]
+    # for the XYdam_uniqueSegm data, add data.all information -> All variables already included!
+    #tmp <- data.all[ni[match(XYdam_uniqueSegm$segID, data.all$segID[ni])],]
+    # Sort columns of XYdam_uniqueSegm -> first data.all-columns, then decl information
     nicols <- which(!colnames(XYdam_uniqueSegm)%in%vars_to_prebas)
     XYcols <- colnames(XYdam_uniqueSegm)[nicols]
-    XYdam_uniqueSegm <- cbind(tmp,XYdam_uniqueSegm[,..nicols])
+    XYdam_uniqueSegm <- XYdam_uniqueSegm[,c(..vars_to_prebas,..XYcols)]
+    # get the sorter column ids  
+    nicols <- which(!colnames(XYdam_uniqueSegm)%in%vars_to_prebas)
+    XYcols <- colnames(XYdam_uniqueSegm)[nicols]
+    #XYdam_uniqueSegm <- cbind(tmp,XYdam_uniqueSegm[,..nicols])
     
     # rows in data.all, which are not in XYdam_uniqueSegm data
     ni <- which(!(data.all$segID %in% XYdam_uniqueSegm$segID))
     data.all <- cbind(data.all[ni,],array(0,c(length(ni), length(XYcols))))
-    colnames(data.all) <- colnames(XYdam_uniqueSegm)
-    data.all$dam_year <- sample(yrs,nrow(data.all),replace = T)
-    data.all$dam_id <- data.all$damSegID <- paste0("0",1:nrow(data.all))
+    colnames(data.all)[nicols] <- colnames(XYdam_uniqueSegm)[nicols]
+    data.all$dam_year <- sample(yrs,nrow(data.all),replace = T) # give random year for monitoring
+    data.all$dam_id <- data.all$damSegID <- paste0("0",1:nrow(data.all)) # damageid starting with 0
+    
     # Combine the two sets
     data.all <- rbind(XYdam_uniqueSegm, data.all)
   }
@@ -217,7 +226,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
   # validation set as a completelly random set
   ni <- sample(1:nrow(data.all), nSegs, replace=F)
   sampleValidation <- data.all[ni,]
-  
+  print()
   if(climScen==0){
     # training set from the rest of segments: 
     data.all <- data.all[setdiff(1:nrow(data.all),ni),]
