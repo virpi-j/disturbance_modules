@@ -1322,9 +1322,10 @@ if(!sbatches){
 }
 
 save(output_stats, file="testitiedosto.rdata")
-file.remove(paste0(workdir,"fmi_vars_PREBAS.rdata"))
-file.remove(paste0(workdir,"climID_lookup.rdata"))
-
+if(fmi_from_allas){
+  file.remove(paste0(workdir,"fmi_vars_PREBAS.rdata"))
+  file.remove(paste0(workdir,"climID_lookup.rdata"))
+}
 #save(output_stats, file = "/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Results/validation_stats.rdata")
 #any(sampleXs$regio$multiOut[,,"grossGrowth/bb BA disturbed",,2]>0)
 
