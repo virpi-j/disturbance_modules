@@ -110,7 +110,8 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     XYdamages[,damSegID := match(paste(XYdamages$dam_id,XYdamages$segID),
                                  paste(IDsUniq$dam_id,IDsUniq$segID))]
     areas <- XYdamages[, .N, by = list(damSegID)]
-    
+  }
+  if(climScen==0){
     XYdam_uniqueSegm <- XYdamages[XYdamages[,.I[which.max(spruce)], by=damSegID]$V1] # one row for each segment
     XYdam_uniqueSegm[,N := areas[match(areas$damSegID, XYdam_uniqueSegm$damSegID),"N"]]
     XYdam_uniqueSegm[,area := N*16^2/100^2]
