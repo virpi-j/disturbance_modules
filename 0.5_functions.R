@@ -22,7 +22,7 @@ neighborsAll <- function(ij, dataS, damCCutInt, damBBInt, damWInt){
   #if(is.na(dam_yeari)) print(paste(ij,dam_indd[iks],dam_yeari))
   # choose declarations from years dam_yeari-4:dam_yeari-1 and thus also not in declaration ij
   KUVA <- F
-  clctDist <- 1000 #16*6 # possible range to be checked
+  clctDist <- 16*7 # possible range to be checked
   #UUSI <- T
   ntmpi <- which(yyd<=(max(yi)+clctDist) & yyd>=(min(yi)-clctDist) & 
                    xxd<=(max(xi)+clctDist) & xxd>=(min(xi)-clctDist))
@@ -30,7 +30,7 @@ neighborsAll <- function(ij, dataS, damCCutInt, damBBInt, damWInt){
   ijsd <- NULL  
   if(is.na(dam_yeari)){
     ijsd <- NULL  
-    print("NA dam year")
+    print(paste("id",ij,"NA dam year"))
   } else {
 #    if(UUSI){
     distances <- 1e12

@@ -256,14 +256,21 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     }
     # X and y coordinates for the samples
     setkey(data.IDs,segID)
-    nicols <- setdiff(1:ncol(sampleTraining),which(colnames(sampleTraining)%in%c("x","y")))
-    sampleTraining <- sampleTraining[,..nicols]
-    setkey(sampleTraining,segID)
-    tabX <- merge(data.IDs,sampleTraining) # coords of the segments in sample outside declarations
-    x <- tabX$x[match(sampleTraining$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
-    y <- tabX$y[match(sampleTraining$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
-    sampleTraining[,x:=x]
-    sampleTraining[,y:=y]
+    xycols <- which(colnames(sampleTraining)%in%c("x","y"))
+    #nicols <- setdiff(1:ncol(sampleTraining),which(colnames(sampleTraining)%in%c("x","y")))
+    #sampleTraining <- sampleTraining[,..nicols]
+    ni <- which(sampleTraining[,c("x","y")]==0, arr.ind=T)[,1]
+    tmp <- sampleTraining[ni,]
+    setkey(tmp,segID)
+    tabX <- merge(data.IDs,tmp) # coords of the segments in sample outside declarations
+    x <- tabX$x[match(tmp$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
+    y <- tabX$y[match(tmp$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
+    #setkey(sampleTraining,segID)
+    #tabX <- merge(data.IDs,sampleTraining) # coords of the segments in sample outside declarations
+    #x <- tabX$x[match(sampleTraining$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
+    #y <- tabX$y[match(sampleTraining$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
+    sampleTraining[ni,x:=x]
+    sampleTraining[ni,y:=y]
     rm(list=c("x","y","tabX")); gc()
     if(KUVA){
       ni <- sample(1:nSegs,1000,replace = F)
@@ -341,7 +348,8 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
       damWInt[is.na(damWInt)] <- 1e12
       damWInt[damWInt==0] <-1e12
       print(paste("Wind obs. n =",length(which(damWInt==1))))
-      source("../PREBAStesting/0.5_functions.R", local = T)
+      #source("../PREBAStesting/0.5_functions.R", local = T)
+      source("~/disturbance_modules/0.5_functions.R")
       outputNeighbor <- apply(data.table(c(1:nSegs)),1,neighborsAll,dataS=dataS,
                               damCCutInt=damCCutInt, damBBInt=damBBInt, damWInt=damWInt)
       outputNeighbor <- data.table(t(outputNeighbor))
