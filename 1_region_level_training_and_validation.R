@@ -349,12 +349,13 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
       damWInt[damWInt==0] <-1e12
       print(paste("Wind obs. n =",length(which(damWInt==1))))
       #source("../PREBAStesting/0.5_functions.R", local = T)
-      source("~/disturbance_modules/0.5_functions.R")
+      source("~/disturbance_modules/0.5_functions_updated.R", local=T)
       outputNeighbor <- apply(data.table(c(1:nSegs)),1,neighborsAll,dataS=dataS,
                               damCCutInt=damCCutInt, damBBInt=damBBInt, damWInt=damWInt)
       outputNeighbor <- data.table(t(outputNeighbor))
       colnames(outputNeighbor) <- dimNams
       outputNeighbor[outputNeighbor==1e12] <- NA
+      print(outputNeighbor)
       #rm(list=c("xx","yy","dx"))
       gc()
       if(ik==1){

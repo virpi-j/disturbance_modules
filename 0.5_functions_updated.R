@@ -13,11 +13,13 @@ neighborsAll <- function(ij, dataS, damCCutInt, damBBInt, damWInt){
     dam_yeari <- as.numeric(XYdamages$dam_year[iks[1]]) # damage year of the dam_id
     xi <- XYdamages$x[iks]
     yi <- XYdamages$y[iks]
+    damidi <- XYdamages$dam_id[iks]
   } else if(dataS$forestdamagequalifier[ij]==0){          # in sample
     iks <- which(dataS$damSegID==damSegIDij) # all segments in the dam_id
     dam_yeari <- as.numeric(dataS$dam_year[iks[1]]) # damage year of the dam_id
     xi <- dataS$x[iks]
     yi <- dataS$y[iks]
+    damidi <- dataS$dam_id[iks]
   } else { print("error")}
   #if(is.na(dam_yeari)) print(paste(ij,dam_indd[iks],dam_yeari))
   # choose declarations from years dam_yeari-4:dam_yeari-1 and thus also not in declaration ij
@@ -26,7 +28,8 @@ neighborsAll <- function(ij, dataS, damCCutInt, damBBInt, damWInt){
   #UUSI <- T
   ntmpi <- which(yyd<=(max(yi)+clctDist) & yyd>=(min(yi)-clctDist) & 
                    xxd<=(max(xi)+clctDist) & xxd>=(min(xi)-clctDist))
-  if(length(ntmpi)>0) ntmpi <- ntmpi[which(!paste0(xxd[ntmpi],"_",yyd[ntmpi])%in%paste0(xi,"_",yi))]
+  if(length(ntmpi)>0) ntmpi <- ntmpi[which(!paste0(xxd[ntmpi],"_",yyd[ntmpi])%in%paste0(xi,"_",yi) &
+                                             !dam_idd[ntmpi]%in%damidi)]
   ijsd <- NULL  
   if(is.na(dam_yeari)){
     ijsd <- NULL  
@@ -60,11 +63,9 @@ neighborsAll <- function(ij, dataS, damCCutInt, damBBInt, damWInt){
     
   }
   ijs <- ijsSBB <- ijsWind <- NULL
-  if(length(ijsd)>0){
-    # clearcuts in neighborhood
-    
+  if(length(ijsd)>0){ # clearcuts in neighborhood
     if(length(ijsd)>1 & ncol(distances)>1){
-      ntmp <- damCCutInt[ijsd]*damYInt[ijsd]*distances[ijsd,]
+      ntmp <- damCCutInt[ntmpi[ijsd]]*damYInt[ijsd]*distances[ijsd,]
       mins <- apply(ntmp,2,min)
     } else if(ncol(distances)==1) {
       ntmp <- damCCutInt[ijsd]*damYInt[ijsd]*distances[ijsd,1]
@@ -89,7 +90,7 @@ neighborsAll <- function(ij, dataS, damCCutInt, damBBInt, damWInt){
         plot(c(xxd[ntmpi[ijsd]],xi)-xi[1],c(yyd[ntmpi[ijsd]],yi)-yi[1],pch=19,
              main=paste0("CC, row=",ij,", damSegid=",damSegIDij))
         points(xi-xi[1],yi-yi[1],col="red",pch=19)
-        points(xxd[ntmpi[ijs]]-xi[1],yyd[ntmpi[ijs]]-yi[1],col="red",pch=4,cex=1.6)
+        points(xxd[ntmpi[ijs]]-xi[1],yyd[ntmpi[ijs]]-yi[1],col="green",pch=4,cex=1.6)
       }
     }
     
@@ -165,9 +166,9 @@ neighborsAll <- function(ij, dataS, damCCutInt, damBBInt, damWInt){
     #ti <- Sys.time()
     ik<-1
     
-    xx <- xxd[ijs]
-    yy <- yyd[ijs]
-    dam_year <- dam_yeard[ijs]
+    xx <- xxd[ntmpi[ijs]]
+    yy <- yyd[ntmpi[ijs]]
+    dam_year <- dam_yeard[ntmpi[ijs]]
     
     neighbors <-function(ik,clctDist){
       dclct <- dclct_south <- c(1e12,NA)
@@ -194,9 +195,9 @@ neighborsAll <- function(ij, dataS, damCCutInt, damBBInt, damWInt){
   if(length(ijsSBB)>0){
     ik<-1
     # close neighbours with SBB: distance and time from clearcut
-    xx <- xxd[ijsSBB]
-    yy <- yyd[ijsSBB]
-    dam_year <- dam_yeard[ijsSBB]
+    xx <- xxd[ntmpi[ijsSBB]]
+    yy <- yyd[ntmpi[ijsSBB]]
+    dam_year <- dam_yeard[ntmpi[ijsSBB]]
     dx <- sqrt((xx-xi[ik])^2+(yy-yi[ik])^2)
     
     neighbors <-function(ik,clctDist){
@@ -213,9 +214,9 @@ neighborsAll <- function(ij, dataS, damCCutInt, damBBInt, damWInt){
   }
   if(length(ijsWind)>0){
     ik<-1
-    xx <- xxd[ijsWind]
-    yy <- yyd[ijsWind]
-    dam_year <- dam_yeard[ijsWind]
+    xx <- xxd[ntmpi[ijsWind]]
+    yy <- yyd[ntmpi[ijsWind]]
+    dam_year <- dam_yeard[ntmpi[ijsWind]]
     
     neighbors <-function(ik,clctDist){
       dclct_Wind <- c(1e12,NA)
@@ -231,7 +232,10 @@ neighborsAll <- function(ij, dataS, damCCutInt, damBBInt, damWInt){
     
   }    
   out <- c(dclct, dclct_SBB, dclct_Wind, dclct_south)
-  if(out[1]<1e12) print(out)
+  #if(min(out[c(1,3,5,7)])<1e12){
+  #  print(ij)
+  #  print(out)
+  #} 
   return(out)
 }
 
