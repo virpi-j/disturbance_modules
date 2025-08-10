@@ -120,13 +120,21 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     XYdam_uniqueSegm <- XYdam_uniqueSegm[segID%in%data.all$segID,] # some damage polygons are outside the landclasses 1:2
     gc()
     
-    # columns that are not in XYdam tables
-    not_in_XYdam_uniqueSegm <- colnames(data.all)[which(!(colnames(data.all)%in%
-                                                            colnames(XYdam_uniqueSegm)))]
-    # find data for these columns from data.all
-    XYdam_uniqueSegm <- cbind(XYdam_uniqueSegm,
-                              data.all[match(XYdam_uniqueSegm$segID,data.all$segID),..not_in_XYdam_uniqueSegm])
-    
+    if(TRUE){
+      ntmp <- match(XYdam_uniqueSegm$segID,data.all$segID)
+      ntmp2 <- which(!(colnames(XYdam_uniqueSegm)%in%colnames(data.all)))
+      ntmp2 <- cbind(data.all[ntmp,], XYdam_uniqueSegm[,..ntmp2])
+      ntmp2[,c("N","x","y","area")] <- XYdam_uniqueSegm[,c("N","x","y","area")]
+      XYdam_uniqueSegm <- ntmp2
+      rm(list=c("ntmp","ntmp2"))
+      gc()
+    } else  {   # columns that are not in XYdam tables
+      not_in_XYdam_uniqueSegm <- colnames(data.all)[which(!(colnames(data.all)%in%
+                                                              colnames(XYdam_uniqueSegm)))]
+      # find data for these columns from data.all
+      XYdam_uniqueSegm <- cbind(XYdam_uniqueSegm,
+                                data.all[match(XYdam_uniqueSegm$segID,data.all$segID),..not_in_XYdam_uniqueSegm])
+    }
     ######################### clearcuts?
     # types of cuttings classified as clearcut
     cuttinginpractise <- c(5, 8, 16, 17, 19, 21, 22, 24)
