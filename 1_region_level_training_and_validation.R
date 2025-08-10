@@ -165,8 +165,8 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
   x <- tabX$x[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
   y <- tabX$y[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
   rm("tabX"); gc()
-data.all[,x:=x]
-data.all[,y:=y]
+  data.all[,x:=x]
+  data.all[,y:=y]
 
   gc()
   KUVA <- F
@@ -263,47 +263,49 @@ data.all[,y:=y]
       sampleTraining <- data.all[ni,]
     }
     # X and y coordinates for the samples
-    setkey(data.IDs,segID)
-    xycols <- which(colnames(sampleTraining)%in%c("x","y"))
-    #nicols <- setdiff(1:ncol(sampleTraining),which(colnames(sampleTraining)%in%c("x","y")))
-    #sampleTraining <- sampleTraining[,..nicols]
-    ni <- which(sampleTraining[,c("x","y")]==0, arr.ind=T)[,1]
-    tmp <- sampleTraining[ni,]
-    setkey(tmp,segID)
-    tabX <- merge(data.IDs,tmp) # coords of the segments in sample outside declarations
-    x <- tabX$x[match(tmp$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
-    y <- tabX$y[match(tmp$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
-    #setkey(sampleTraining,segID)
-    #tabX <- merge(data.IDs,sampleTraining) # coords of the segments in sample outside declarations
-    #x <- tabX$x[match(sampleTraining$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
-    #y <- tabX$y[match(sampleTraining$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
-    sampleTraining[ni,x:=x]
-    sampleTraining[ni,y:=y]
-    rm(list=c("x","y","tabX")); gc()
-    if(KUVA){
-      ni <- sample(1:nSegs,1000,replace = F)
-      points(sampleTraining$x[ni],sampleTraining$y[ni], col="blue")
+    if(FALSE){
+      setkey(data.IDs,segID)
+      xycols <- which(colnames(sampleTraining)%in%c("x","y"))
+      #nicols <- setdiff(1:ncol(sampleTraining),which(colnames(sampleTraining)%in%c("x","y")))
+      #sampleTraining <- sampleTraining[,..nicols]
+      ni <- which(sampleTraining[,c("x","y")]==0, arr.ind=T)[,1]
+      tmp <- sampleTraining[ni,]
+      setkey(tmp,segID)
+      tabX <- merge(data.IDs,tmp) # coords of the segments in sample outside declarations
+      x <- tabX$x[match(tmp$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
+      y <- tabX$y[match(tmp$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
+      #setkey(sampleTraining,segID)
+      #tabX <- merge(data.IDs,sampleTraining) # coords of the segments in sample outside declarations
+      #x <- tabX$x[match(sampleTraining$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
+      #y <- tabX$y[match(sampleTraining$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
+      sampleTraining[ni,x:=x]
+      sampleTraining[ni,y:=y]
+      rm(list=c("x","y","tabX")); gc()
+      if(KUVA){
+        ni <- sample(1:nSegs,1000,replace = F)
+        points(sampleTraining$x[ni],sampleTraining$y[ni], col="blue")
+      }
+      if(length(which(is.na(sampleTraining$x)))>0){
+        nNas <- which(is.na(sampleTraining$x))
+        print(sampleTraining[nNas,])
+      }
     }
-    if(length(which(is.na(sampleTraining$x)))>0){
-      nNas <- which(is.na(sampleTraining$x))
-      print(sampleTraining[nNas,])
-    }
-    
+    if(FALSE){
+      setkey(data.IDs,segID)
+      nicols <- setdiff(1:ncol(sampleValidation),which(colnames(sampleValidation)%in%c("x","y")))
+      sampleValidation <- sampleValidation[,..nicols]
+      setkey(sampleValidation,segID)
+      tabX <- merge(data.IDs,sampleValidation) # coords of the segments in sample outside declarations
+      x <- tabX$x[match(sampleValidation$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
+      y <- tabX$y[match(sampleValidation$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
+      sampleValidation[,x:=x]
+      sampleValidation[,y:=y]
+      rm(list=c("x","y","tabX")); gc()
+      if(KUVA){
+        points(sampleValidation$x[ni],sampleValidation$y[ni],col="red")
+      }
+    }  
   }
-  setkey(data.IDs,segID)
-  nicols <- setdiff(1:ncol(sampleValidation),which(colnames(sampleValidation)%in%c("x","y")))
-  sampleValidation <- sampleValidation[,..nicols]
-  setkey(sampleValidation,segID)
-  tabX <- merge(data.IDs,sampleValidation) # coords of the segments in sample outside declarations
-  x <- tabX$x[match(sampleValidation$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
-  y <- tabX$y[match(sampleValidation$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
-  sampleValidation[,x:=x]
-  sampleValidation[,y:=y]
-  rm(list=c("x","y","tabX")); gc()
-  if(KUVA){
-    points(sampleValidation$x[ni],sampleValidation$y[ni],col="red")
-  }
-  
   #####
   # For the sample, indexes about neighbors
   print(paste("Calculate neighbor information =",neighborIDs))
