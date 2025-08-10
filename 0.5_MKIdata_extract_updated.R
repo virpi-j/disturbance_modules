@@ -30,7 +30,7 @@ dam_indexs <- c("all","0","1602","1504","1503","1650")
 clearcuts <- c(5, 8, 16, 17, 19, 21, 22, 24) # cuttingrealizationpractice codes for clearcuts
 
 regs <- c(1,3:20)
-dam_years <- 2011:2024
+dam_years <- 2015:2024
 
 outputStats <- array(0,c(8,1+max(dam_years)-min(dam_years),length(regs)+1),
                      dimnames = list(paste0(dam_names[c(1,1,3,3,4,4,5,5)],c("_all","_clearcut")),
@@ -39,16 +39,16 @@ outputStats <- array(0,c(8,1+max(dam_years)-min(dam_years),length(regs)+1),
 library(sp)
 #library(rgdal)
 
-upm <- cbind(c(61.068067045391004, 28.239737695831963),c(61.161953, 26.820275), c(60.967942, 26.671960),
-             c(60.778085, 26.890481),c(61.12872381073421, 28.476726026705737),
-             c(61.253919991113364, 28.864573071682752),c(61.43498780382168, 29.343663069179648))
-colnames(upm) <- c("UPMKaukas","UPMKymmene","UPMKymi","SEAnjala","SEJoutseno","SEKaukoaa","MBSimpele")
-xy <- data.table(ID=1:ncol(upm),x=upm[1,],y=upm[2,])
-coordinates(xy) <- c("y","x")
+#upm <- cbind(c(61.068067045391004, 28.239737695831963),c(61.161953, 26.820275), c(60.967942, 26.671960),
+#             c(60.778085, 26.890481),c(61.12872381073421, 28.476726026705737),
+#             c(61.253919991113364, 28.864573071682752),c(61.43498780382168, 29.343663069179648))
+#colnames(upm) <- c("UPMKaukas","UPMKymmene","UPMKymi","SEAnjala","SEJoutseno","SEKaukoaa","MBSimpele")
+#xy <- data.table(ID=1:ncol(upm),x=upm[1,],y=upm[2,])
+#coordinates(xy) <- c("y","x")
 #crsX <- ("+proj=utm +zone=35 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m+no_defs")
-proj4string(xy) <- CRS("+proj=longlat +datum=WGS84") 
+#proj4string(xy) <- CRS("+proj=longlat +datum=WGS84") 
 #res <- spTransform(xy, crsX)#CRS(paste("+proj=utm +zone=",35," ellps=WGS84",sep='')))
-upms <- coordinates(spTransform(xy, CRS(paste("+proj=utm +zone=",35," ellps=GRS80",sep=''))))
+#upms <- coordinates(spTransform(xy, CRS(paste("+proj=utm +zone=",35," ellps=GRS80",sep=''))))
 #extent(upms)
 #proj4string(xy) <- CRS("+proj=longlat +datum=WGS84")  ## for example
 #res <- spTransform(xy, CRS("+proj=utm +zone=51 ellps=WGS84"))
@@ -56,11 +56,11 @@ upms <- coordinates(spTransform(xy, CRS(paste("+proj=utm +zone=",35," ellps=GRS8
 
 
 DeclToRaster <- T # T if update the declaration database
-if(DeclToRaster) dam_years <- 2015:2024
+#if(DeclToRaster) dam_years <- 2015:2024
 
-r_noi <- 1
+r_noi <- 5
 #disturbance_extract <- function(r_noi){
-for(r_noi in 1:length(regs)){
+for(r_noi in 5:6){#1:length(regs)){
   r_no <- rnos[regs[r_noi]]
   toMem <- ls()
   print(paste("region",r_no))
@@ -72,8 +72,7 @@ for(r_noi in 1:length(regs)){
   files <- list.files()
   print(files[grepl(".gpkg", files, fixed = TRUE)])
   file.rename(from=files[grepl(".gpkg", files, fixed = TRUE)][1],to="test.gpkg")
-  layers = c("forestdamagequalifier","maingroup",#"fertilityclass","soiltype",
-             #"declarationmaintreespecies","meanage","meandiameter",
+  layers = c("forestdamagequalifier","maingroup",
              "cuttingpurpose","cuttingrealizationpractice",
              "declarationarrivaldate","geometry")
   tmp<-st_read("test.gpkg", layer = "forestusedeclaration")[,layers] # read forestdeclaration layer
@@ -125,7 +124,7 @@ for(r_noi in 1:length(regs)){
     #CSCrun<-T
     load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/data.all_maakunta_",r_no,".rdata"))
     data.all$segID <- data.all$maakuntaID
-    data.all <- data.all[segID!=0,c("segID","age","ba","pine","spruce","birch")]
+    data.all <- data.all[segID!=0,c("segID")]#,"age","ba","pine","spruce","birch")]
     setkey(data.all,segID)
     gc()
     
@@ -146,9 +145,9 @@ for(r_noi in 1:length(regs)){
     tabX<-tabX[(tabX$x>=bbox[1] & tabX$x<=bbox[3] & tabX$y>=bbox[2] &tabX$y <=bbox[4]),]
     gc()
     pts <- vect(cbind(tabX$x,tabX$y),crs = crsX)
-    #values(pts) <- data.table(segID=tabX$segID, id=1:nrow(tabX),x=tabX$x,y=tabX$y)
-    values(pts) <- tabX
-    rm(tabX)
+    values(pts) <- data.table(segID=tabX$segID, id=1:nrow(tabX),x=tabX$x,y=tabX$y)
+    #values(pts) <- tabX
+    rm("tabX")
     gc()
     
     
@@ -166,11 +165,12 @@ for(r_noi in 1:length(regs)){
     crs(v) <- crs(pts)
     values(v)[ntmp] <- data.table(dam_id = 1:nrow(v))
     gc()
-    rm(list="xy")
-    gc()
+    #rm(list="xy")
+    #gc()
     
     #XYdamages <- as.data.table(intersect(v[which(values(v)[,"dam_year"]=="2019"),], pts))
     #XYdamages <- as.data.table(intersect(v[which(values(v)[,"dam_year"]%in%c(2016:2024)),], pts))
+    
     XYdamages <- as.data.table(intersect(v, pts))
     print(head(XYdamages))
     #XYdamages <- XYdamages[which(XYdamages$maingroup%in%c("1","2")),] # forest land and poorly productive forest land only
@@ -247,29 +247,29 @@ for(r_noi in 1:length(regs)){
             }
           }
           
-          if(toFile){
-            
-            newRes <- F
-            if(newRes){ # If update the declaration data used in PREBAS
-              fname <- paste0("DeclaredDamages_",dam_names[inds],"_rno",r_no,"_",regnames[r_noi],".rdata")
-              save(XYdamages,file=paste0(savepath,"/",fname))
-              print(paste("File",fname))
-              print(paste("saved to folder",savepath))
-            }
-          }
         }
         rm(list=setdiff(ls(),toMem2))
         gc()
       }
-    }}
-  #if(toFile) dev.off()
-  
-  #  rm(tabX);
-  rm(list=setdiff(ls(),toMem))
-  gc()
-  #return(outputStats)
-}
-
+    }
+    
+    #if(toFile) dev.off()
+    if(toFile){
+      
+      #if(newRes){ # If update the declaration data used in PREBAS
+      fname <- paste0("DeclaredDamages_rno",r_no,"_",regnames[r_noi],"_new.rdata")
+      save(XYdamages,file=paste0(savepath,"/",fname))
+      print(paste("File",fname))
+      print(paste("saved to folder",savepath))
+      #}
+    }
+    
+    #  rm(tabX);
+    rm(list=setdiff(ls(),toMem))
+    gc()
+    #return(outputStats)
+  }
+}  
 #library(parallel)
 if(!toFile){
   regs <- c(1,3:5)

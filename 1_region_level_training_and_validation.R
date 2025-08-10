@@ -160,6 +160,14 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
   data.IDs$segID <- data.IDs$maakuntaID
   data.IDs <- data.IDs[segID!=0]
   setkey(data.IDs,segID)
+  setkey(data.all,segID)
+  tabX <- merge(data.IDs,data.all) # coords of the segments in sample outside declarations
+  x <- tabX$x[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
+  y <- tabX$y[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
+  rm("tabX"); gc()
+data.all[,x:=x]
+data.all[,y:=y]
+
   gc()
   KUVA <- F
   if(KUVA){
@@ -1101,6 +1109,10 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
         probs_segm <- array(0,c(length(years),6),dimnames = list(years,c("min_pw_decl_segm","pw_median_decl","pw_median_decl/median_all",
                                                                          "min_pbb_decl_segm","pbb_median_decl","pbb_median_decl/median_all")))
         
+        #ppprob <- sampleXs$region$multiOut[,years-2015,"Rh/SBBpob[layer_1]",1,2]
+        #indx <- max.col(ppprob, ties.method='first')
+        #ppprobmax <- ppprob[cbind(1:nrow(ppprob), indx)]
+        
         ti <- 1
         for(ti in 1:length(years)){
           yeari <- years[ti]
@@ -1114,7 +1126,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
                                     median(pw[niw])/median(pw[setdiff(1:nSegs,niw)]))}
           if(length(nibb)>0){
             probs_segm[ti,4:6] <- c(min(pbb[nibb]),median(pbb[nibb]),
-                                    median(pbb[nibb])/median(pbb[setdiff(1:nSegs,nibb)]))}
+                                    median(pbb[nibb])/median(pbb[setdiff(1:nSegs,nibb)]))
+            }
           bb_dam_area[ti,] <- c(sum(dataS$area[which(dataS$forestdamagequalifier=="1602" &
                                                        as.numeric(dataS$dam_year)==yeari)]),
                                 #sum(sampleXs$region$multiOut[,yeari-2015,"Rh/SBBpob[layer_1]",1,2]*dataS$area),
