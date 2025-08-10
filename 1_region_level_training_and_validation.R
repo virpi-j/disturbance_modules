@@ -1039,6 +1039,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
         gc()
         print("grossgrowth")
         print(round(apply(sampleXs$region$multiOut[1,1:6,"grossGrowth",,1],1,sum),1))
+        print("V")
+        print(round(apply(sampleXs$region$multiOut[1,1:6,"V",,1],1,sum),1))
         print("bb prob")
         print(sampleXs$region$multiOut[1,1:6,"Rh/SBBpob[layer_1]",1,2])
         print("fire prob")
