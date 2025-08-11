@@ -635,7 +635,6 @@ trainingSetCreation <- function(r_noi, sampleXs, dataS, startingYear=2015, endin
   }
   
   
-  
   # PI for BA spruceFract
   #x0 = 0.6
   #k = -10.
@@ -833,45 +832,20 @@ trainingSetCreation <- function(r_noi, sampleXs, dataS, startingYear=2015, endin
   print(paste("NeighborIDs",neighborIDs))
   if(neighborIDs){
     # add info about neighboring SBB damages  
-    colsNeigh <- c((which(names(dataS)=="y")+1):ncol(dataS))
+    colsNeigh <- (which(grepl(pattern = "minDist",colnames(dataS)))[1]):ncol(dataS)
     output <- cbind(output,dataS[,..colsNeigh])
     nvarsSBB <- nvarsSBB+length(colsNeigh)
   }
   
-  output_mem <- output#[,-2]
+  #output_mem <- output#[,-2]
   
-  output2 <-output[output[,.I[which.max(BA_spruce)], by=dam_id]$V1,] # one row for each damage polygon
+  #output2 <-output[output[,.I[which.max(BA_spruce)], by=dam_id]$V1,] # one row for each damage polygon
   #rrows <- which(output$damSegID %in% output2$damSegID)
   #output3 <- output2[rrows[match(output$damSegID,output2$damSegID)],]
   #  output$damNeighbor[is.na(damNeighbor)]=1
-  varsSBB <- colnames(output)[(ncol(output)-nvarsSBB+1):ncol(output)]
-  if(length(nSBB)>0){
-    # as pixels
-    output <- output2
-    output <- output[rep(1:nrow(output), as.vector(output$N)),]  
-
-    ncols <- ncol(output)
-    for(ij in (ncols-length(varsSBB)+1):ncols){
-      if(length(which(!is.na(output[,..ij])))>0){
-        par(mfrow = c(3,1))
-        a <- hist(as.numeric(as.matrix(output[,..ij])),plot=F)
-        barplot(a$counts,names.arg = a$mids,xlab=colnames(output)[ij],
-                main = "all sim data",
-                ylab="ha sim")
-        b <- hist(as.numeric(as.matrix(output[output$forestdamagequalifier==1602 & 
-                                                output$BA_spruce>0,..ij])),
-                  breaks=a$breaks,plot=F)
-        barplot(b$counts,names.arg = a$mids,xlab=colnames(output)[ij],
-                main = "SBB sim",
-                breaks=a$breaks,
-                ylab="ha sim")
-        barplot(b$counts/a$counts*100,names.arg = a$mids,
-                main=paste(regnames[r_noi],"/","SBB %"),
-                xlab=colnames(output)[ij],ylab="% of declarations")
-      }
-    }
-  }
-  outputs <- cbind(data.table(reg = r_noi),output_mem)
+  #varsSBB <- colnames(output)[(ncol(output)-nvarsSBB+1):ncol(output)]
+  outputs <- data.table(reg=r_noi, output)
+  #outputs <- cbind(data.table(reg = r_noi),output_mem)
   #return(output_mem)
   #outputs <- rbind(outputs,output_mem)
   if(toFile){ 
