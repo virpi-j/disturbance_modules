@@ -1092,8 +1092,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
         years <- years[years>2018 & years<2024]
         bb_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","sim_harvested","sim_all")))
         w_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","sim_harvested","sim_all")))
-        probs_segm <- array(0,c(length(years),6),dimnames = list(years,c("min_pw_decl_segm","pw_median_decl","pw_median_decl/median_all",
-                                                                         "min_pbb_decl_segm","pbb_median_decl","pbb_median_decl/median_all")))
+        probs_segm <- array(0,c(length(years),8),dimnames = list(years,c("min_pw_decl_segm","pw_median_decl","pw_median_decl_w","pw_median_nodecl",
+                                                                         "min_pbb_decl_segm","pbb_median_decl","pbb_median_decl_bb","pbb_median_nodecl")))
         
         #ppprob <- sampleXs$region$multiOut[,years-2015,"Rh/SBBpob[layer_1]",1,2]
         #indx <- max.col(ppprob, ties.method='first')
@@ -1103,16 +1103,20 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
         for(ti in 1:length(years)){
           yeari <- years[ti]
           nibb <- which(dataS$forestdamagequalifier=="1602" & as.numeric(dataS$dam_year)==yeari)
+          ninodecl <- which(dataS$forestdamagequalifier=="0" & as.numeric(dataS$dam_year)==yeari)
+          nibbdecl_other <- setdiff(1:nrow(dataS),c(nibb,ninodecl))
           niw <- which(dataS$forestdamagequalifier=="1504" & as.numeric(dataS$dam_year)==yeari)
+          niwdecl_other <- setdiff(1:nrow(dataS),c(niw,ninodecl))
           pw <- sampleXs$region$outDist[,yeari-2015,"wrisk"]
           pbb <- sampleXs$region$multiOut[,yeari-2015,"Rh/SBBpob[layer_1]",1,2]
           #hist(pbb,50)
           if(length(niw)>0){
-            probs_segm[ti,1:3] <- c(min(pw[niw]),median(pw[niw]),
-                                    median(pw[niw])/median(pw[setdiff(1:nSegs,niw)]))}
+            probs_segm[ti,1:4] <- c(min(pw[niw]),median(pw[niwdecl_other]),
+                                    median(pw[niw]), median(pw[ninodecl]))#median(pw[niw])/median(pw[setdiff(1:nSegs,niw)]))}
+          }
           if(length(nibb)>0){
-            probs_segm[ti,4:6] <- c(min(pbb[nibb]),median(pbb[nibb]),
-                                    median(pbb[nibb])/median(pbb[setdiff(1:nSegs,nibb)]))
+            probs_segm[ti,5:8] <- c(min(pbb[nibb]),median(pbb[nibbdecl_other]),
+                                    median(pbb[nibb]),median(pbb[ninodecl]))#median(pbb[nibb])/median(pbb[setdiff(1:nSegs,nibb)]))
             }
           bb_dam_area[ti,] <- c(sum(dataS$area[which(dataS$forestdamagequalifier=="1602" &
                                                        as.numeric(dataS$dam_year)==yeari)]),
