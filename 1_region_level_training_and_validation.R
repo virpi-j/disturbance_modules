@@ -414,7 +414,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
         timeT <- Sys.time()
         outputNeighbor <- apply(data.table(c(1:nSegs)),1,neighborsAll,
                                 dataS=dataS,
-                                declData=declDataor, clctDist=300,KUVA=F)
+                                declData=declDataor, clctDist=150,KUVA=F)
         
       }  
       outputNeighbor <- data.table(t(outputNeighbor))
