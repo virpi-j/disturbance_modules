@@ -1049,12 +1049,13 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
         clcuts <<- 1
         disturbanceON <- NA
         if(setid==2) disturbanceON <- disturbanceON0 # "bb" # c("fire","wind","bb")
+        if(!exists(harvScen0)) harvScen0<-"NoHarv"; harvInten0 <- "NoHarv"
         source("~/finruns_to_update/functions.R", local=T)
         toMem2 <- ls()
         sampleXs <-   runModel(1,sampleID=1, outType = outType, 
                                rcps = rcps, climScen=climScen,
-                               harvScen="NoHarv",sampleX = dataS, 
-                               harvInten="NoHarv", 
+                               harvScen=harvScen0, sampleX = dataS, 
+                               harvInten=harvInten0, 
                                disturbanceON = disturbanceON)
         rm(list=setdiff(ls(),c(toMem2,"sampleXs")))
         gc()
@@ -1137,8 +1138,8 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
                                      areabb,areabbHarv,yearsSamplebb)
         }
         years <- years[years>2018 & years<2024]
-        bb_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","sim_harvested","sim_all")))
-        w_dam_area <- array(0,c(length(years),3),dimnames = list(years,c("sampledata","sim_harvested","sim_all")))
+        bb_dam_area <- array(0,c(length(years),5),dimnames = list(years,c("sampledata","sim_harvested","sim_all","sim_harv_nodeclman","sim_all_nodeclman")))
+        w_dam_area <- array(0,c(length(years),5),dimnames = list(years,c("sampledata","sim_harvested","sim_all","sim_harv_nodeclman","sim_all_nodeclman")))
         probs_segm <- array(0,c(length(years),8),dimnames = list(years,c("min_pw_decl_segm","pw_median_decl","pw_median_decl_w","pw_median_nodecl",
                                                                          "min_pbb_decl_segm","pbb_median_decl","pbb_median_decl_bb","pbb_median_nodecl")))
         
@@ -1164,17 +1165,21 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
           if(length(nibb)>0){
             probs_segm[ti,5:8] <- c(min(pbb[nibb]),median(pbb[nibbdecl_other]),
                                     median(pbb[nibb]),median(pbb[ninodecl]))#median(pbb[nibb])/median(pbb[setdiff(1:nSegs,nibb)]))
-            }
+          }
           bb_dam_area[ti,] <- c(sum(dataS$area[which(dataS$forestdamagequalifier=="1602" &
                                                        as.numeric(dataS$dam_year)==yeari)]),
                                 #sum(sampleXs$region$multiOut[,yeari-2015,"Rh/SBBpob[layer_1]",1,2]*dataS$area),
                                 sum(areaSamplebbHarv[,yeari-2015]),
-                                sum(areaSamplebb[,yeari-2015]))
+                                sum(areaSamplebb[,yeari-2015]),
+                                sum(areaSamplebbHarv[c(nibb,ninodecl),yeari-2015]),
+                                sum(areaSamplebb[c(nibb,ninodecl),yeari-2015]))
           w_dam_area[ti,] <- c(sum(dataS$area[which(dataS$forestdamagequalifier=="1504" &
                                                       as.numeric(dataS$dam_year)==yeari)]),
                                #sum(sampleXs$region$outDist[1,yeari-2015,"wrisk"]*dataS$area),
                                sum(areaSamplewHarv[,yeari-2015]),
-                               sum(areaSamplew[,yeari-2015]))
+                               sum(areaSamplew[,yeari-2015]),
+                               sum(areaSamplewHarv[c(niw,ninodecl),yeari-2015]),
+                               sum(areaSamplew[c(niw,ninodecl),yeari-2015]))
         }
         print(paste("Region",r_no,"/",regnames[r_noi],": bb damaged segment area"))
         print(bb_dam_area)
