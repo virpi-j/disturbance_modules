@@ -60,7 +60,7 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 16*70, KUVA = F){
       ijsd <- NULL
       if(min(distances)<= clctDist**2){ ## any cells near enough
         damYInt <- as.integer(declData$dam_yeard %in% 
-                                c((dam_yeari-15):(dam_yeari)))
+                                c((dam_yeari-15):(dam_yeari-1)))
         damYInt[damYInt==0] <- 1e12
         mins <- apply(damYInt*distances,2,min) # for each segm.pixel, min dist to neighbor
         if(min(mins)<= clctDist**2){
