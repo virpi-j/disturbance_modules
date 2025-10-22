@@ -405,6 +405,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
         print(paste("Wind obs. n =",length(which(damWInt==1))))
       }
       #source("../PREBAStesting/0.5_functions.R", local = T)
+      print("Start running neighborsAll-function...")
       source("~/disturbance_modules/0.5_functions_updated.R", local=T)
       if(!NEWf){
         timeT <- Sys.time()
@@ -417,6 +418,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
                                 declData=declDataor, clctDist=150,KUVA=F)
         
       }  
+      print("done.")
       outputNeighbor <- data.table(t(outputNeighbor))
       colnames(outputNeighbor) <- dimNams
       outputNeighbor[outputNeighbor==1e12] <- NA
