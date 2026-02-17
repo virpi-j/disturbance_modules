@@ -321,7 +321,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     iks <- 1:2
     if(climScen>0) iks <- 2
     ik <- iks[1]
-    for(ik in iks){
+    for(ik in iks){ # training (1) and validation (2) sets
       if(ik==1) {dataS <- sampleTraining
       print("neighbors for training set")}
       if(ik==2){ dataS <- sampleValidation

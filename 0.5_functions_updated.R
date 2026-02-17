@@ -1,6 +1,6 @@
-neighborsAll <- function(ij, dataS, declData, clctDist = 16*70, KUVA = F){
+neighborsAll <- function(ij, dataS, declData, clctDist = 150, KUVA = F){
   #print(paste0("rno",r_noi,": id ",ij))
-  if(!exists("clctDist")) clctDist <- 16*70
+  if(!exists("clctDist")) clctDist <- 150
   if((ij)%%min(1000,round(nSegs/4))==0){
     timeT2 <- Sys.time()
     tperiter<- timeT2-timeT
@@ -8,6 +8,7 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 16*70, KUVA = F){
                  ", time ",round(tperiter,2)))
   }
   damSegIDij <- dataS$damSegID[ij]
+  # forestdamagequalifier in declarations: a number or NA, in sample 0
   if(is.na(dataS$forestdamagequalifier[ij]) | dataS$forestdamagequalifier[ij]>0){ # in declarations
     iks <- which(XYdamages$damSegID==damSegIDij)
     dam_yeari <- as.numeric(XYdamages$dam_year[iks[1]]) # damage year of the dam_id
@@ -39,7 +40,16 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 16*70, KUVA = F){
   dclct <- dclct_south <- dSBB <- dWind <- c(1e12,NA,0)
   if(length(ntmpi)>0){
     declData <- declData[ntmpi,]
-
+    if(KUVA){
+      xm <- mean(xi)
+      ym <- mean(yi)
+      par(mfrow=c(2,2))
+      plot(c(declData$xxd,xi)-xm,c(declData$yyd,yi)-ym,
+           xlab="x",ylab="y",asp=1,col="black")
+      points(declData$xxd[which(declData$damCCutInt==1)]-xm,
+             declData$yyd[which(declData$damCCutInt==1)]-ym,col="blue",pch=19)
+      points(xi-xm,yi-ym,pch=19,col="green",cex=2)
+    }
     n_neigh <- length(ntmpi)
     ijsd <- NULL  
     if(is.na(dam_yeari)){
@@ -47,7 +57,7 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 16*70, KUVA = F){
     } else {
       distances <- 1e12
       if(n_neigh>0){
-        #print(ij)
+        # rows for all neighbors, cols for all pixels in segm
         distances <- array(0,c(n_neigh,length(xi)),
                            dimnames = list(paste0("neighpix_id",1:n_neigh),
                                            paste0("segment_i_id",1:length(xi))))
@@ -58,25 +68,22 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 16*70, KUVA = F){
         distances[distances==0] <- 1e12 # not in the segment ij
       }
       ijsd <- NULL
+      # choose all the cells close enough and from the suitable time period
       if(min(distances)<= clctDist**2){ ## any cells near enough
         damYInt <- as.integer(declData$dam_yeard %in% 
-                                c((dam_yeari-15):(dam_yeari-1)))
+                                c((dam_yeari-4):(dam_yeari)))
         damYInt[damYInt==0] <- 1e12
+        damYInt <- array(rep(damYInt,length(xi)), dim=c(n_neigh,length(xi)))
         mins <- apply(damYInt*distances,2,min) # for each segm.pixel, min dist to neighbor
         if(min(mins)<= clctDist**2){
           ijsd <- which(apply(damYInt*distances,1,min)<clctDist**2) # which decl data is closest
         }
         declData <- declData[ijsd,]
-        damYInt <- damYInt[ijsd]
+        damYInt <- damYInt[ijsd,]
         distances <- distances[ijsd,]
         n_neigh <- length(ijsd)
         if(KUVA & n_neigh>0){
-          xm <- mean(xi)
-          ym <- mean(yi)
-          par(mfrow=c(2,2))
-          plot(c(declData$xxd,xi)-xm,c(declData$yyd,yi)-ym,
-               xlab="x",ylab="y",col="black",asp=1, main=paste("neigh pixs, id=",ij))
-          points(xi-xm,yi-ym,pch=19,col="green")
+          points(declData$xxd-xm,declData$yyd-ym,pch=19,col="red")
         }
       }
       ijs <- ijsSBB <- ijsWind <- NULL
@@ -85,16 +92,16 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 16*70, KUVA = F){
       if(length(ijsd)>0){ 
         
         # clearcuts
-        ntmp <- declData$damCCutInt*damYInt*distances
-        if(n_neigh>1 & length(xi)>1){
+        ntmp <- array(rep(declData$damCCutInt,length(xi)), dim=c(n_neigh,length(xi)))*distances
+        # closest neigh with cc for each pixel in segm0
+        if(n_neigh>1 & length(xi)>1){ # more than one neigh and more than one segm pixel
           mins <- apply(ntmp,2,min)
-          #    } else if(ncol(distances)==1) {
-          #      mins <- ntmp
         } else {
           mins <- ntmp 
         }
-        nclct <- length(which(mins<23^2))
+        nclct <- length(which(mins<(16^2+16^2))) # how many segm pixels right next to clct pixel
         if(min(mins)<= clctDist**2){
+          # find the closest, recent clct pixel 
           if(length(xi)>1 & n_neigh>1){
             ijs <- unique(apply(ntmp,2,which.min)[which(mins==min(mins))])
             ijs <- ijs[which.min(dam_yeari-declData$dam_yeard[ijs])]
@@ -102,14 +109,19 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 16*70, KUVA = F){
             ijs <- which(mins==min(mins))
             ijs <- ijs[which.min(dam_yeari-declData$dam_yeard[ijs])]
           } else {
-            ijs <- ijsd 
+            ijs <- 1 
           }
-          dd <- sqrt(min(mins)) 
+          dd <- sqrt(min(ntmp[ijs,])) 
           dyr <- declData$dam_yeard[ijs]-dam_yeari
           dclct <- c(dd,dyr,nclct)
+          if(is.na(dyr)&dd>0){
+            print(ij)
+            eaeta <- eaatg
+          }
           if(KUVA){
             plot(c(declData$xxd,xi)-xm,c(declData$yyd,yi)-ym,
-                 xlab="x",ylab="y",asp=1,col="black", main=paste("neigh clct d=",round(dd,2),"n=",nclct))
+                 xlab="x",ylab="y",asp=1,col="black", 
+                 main=paste0("neigh clct",ij," d=",round(dd,2),", yr=",dyr,", n=",nclct))
             points(declData$xxd[which(declData$damCCutInt==1)]-xm,
                    declData$yyd[which(declData$damCCutInt==1)]-ym,col="blue",pch=19)
             points(xi-xm,yi-ym,pch=19,col="green",cex=2)
@@ -120,19 +132,20 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 16*70, KUVA = F){
         # clct in south
         damSouth <- damYInt*0
         for(icol in 1:length(xi)){
-          damSouth[which(abs(declData$xxd-xi[icol])<32 & declData$yyd<yi[icol])]<-1
+          damSouth[which(abs(declData$xxd-xi[icol])<sqrt((2*16)**2) & 
+                           declData$yyd<yi[icol])]<-1
         }
         damSouth[damSouth==0] <- 1e12
+        damSouth <- array(rep(damSouth,length(xi)), dim=c(n_neigh,length(xi)))
+        damCCutInt <- array(rep(declData$damCCutInt,length(xi)), dim=c(n_neigh,length(xi)))
         
-        ntmp <- declData$damCCutInt*damYInt*(distances*damSouth)
+        ntmp <- damCCutInt*damYInt*distances*damSouth
         if(length(ijsd)>1 & length(xi)>1){
           mins <- apply(ntmp,2,min)
-          #    } else if(length(xi)==1) {
-          #      mins <- ntmp
         } else {
           mins <- ntmp 
         }
-        nclct_south <- length(which(mins<23^2))
+        nclct_south <- length(which(mins<(16^2+16^2)))
         if(min(mins)<= clctDist**2){
           if(length(xi)>1 & n_neigh>1){
             ijs <- unique(apply(ntmp,2,which.min)[which(mins==min(mins))])
@@ -141,9 +154,10 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 16*70, KUVA = F){
             ijs <- which(mins==min(mins))
             ijs <- ijs[which.min(dam_yeari-declData$dam_yeard[ijs])]
           } else {
-            ijs <- ijsd 
+            ijs <- 1
           }
-          dd <- sqrt(min(mins)) 
+          dd <- sqrt(min(ntmp[ijs,])) 
+#          dd <- sqrt(min(mins)) 
           dyr <- declData$dam_yeard[ijs]-dam_yeari
           dclct_south <- c(dd,dyr,nclct_south)
           if(KUVA){
@@ -157,15 +171,15 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 16*70, KUVA = F){
         }
         
         # SBB in neighborhood
-        ntmp <- declData$damBBInt*damYInt*distances
+        
+        damBBInt <- array(rep(declData$damBBInt,length(xi)), dim=c(n_neigh,length(xi)))
+        ntmp <- damBBInt*damYInt*distances
         if(length(ijsd)>1 & length(xi)>1){
           mins <- apply(ntmp,2,min)
-          #    } else if(length(xi)==1) {
-          #      mins <- ntmp
         } else {
           mins <- ntmp 
         }
-        nbb <- length(which(mins<23^2))
+        nbb <- length(which(mins<(16^2+16^2)))
         if(min(mins)<= clctDist**2){
           if(length(xi)>1 & n_neigh>1){
             ijs <- unique(apply(ntmp,2,which.min)[which(mins==min(mins))])
@@ -174,9 +188,10 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 16*70, KUVA = F){
             ijs <- which(mins==min(mins))
             ijs <- ijs[which.min(dam_yeari-declData$dam_yeard[ijs])]
           } else {
-            ijs <- ijsd 
+            ijs <- 1 
           }
-          dd <- sqrt(min(mins)) 
+          dd <- sqrt(min(ntmp[ijs,])) 
+          #dd <- sqrt(min(mins)) 
           dyr <- declData$dam_yeard[ijs]-dam_yeari
           dSBB <- c(dd,dyr,nbb)
           if(KUVA){
@@ -192,15 +207,14 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 16*70, KUVA = F){
         
         
         # Wind damage in neighborhood
-        ntmp <- declData$damWInt*damYInt*distances
+        damWInt <- array(rep(declData$damWInt,length(xi)), dim=c(n_neigh,length(xi)))
+        ntmp <- damWInt*damYInt*distances
         if(length(ijsd)>1 & length(xi)>1){
           mins <- apply(ntmp,2,min)
-          #    } else if(length(xi)==1) {
-          #      mins <- ntmp
         } else {
           mins <- ntmp 
         }
-        nwind <- length(which(mins<23^2))
+        nwind <- length(which(mins<(16^2+16^2)))
         if(is.na(nwind)) break()
         if(min(mins)<= clctDist**2){
           if(length(xi)>1 & n_neigh>1){
@@ -225,10 +239,6 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 16*70, KUVA = F){
             points(declData$xxd[ijs]-xm,declData$yyd[ijs]-ym,col="red",pch=4,cex=2)
           }
         }
-       # if(KUVA){
-      #    out <- round(c(ij, dclct, dSBB, dWind, dclct_south),2)
-       #   print(out)
-       # }
       }
     }
     
@@ -266,7 +276,7 @@ neighborsAll_old <- function(ij, dataS, damCCutInt, damBBInt, damWInt){
   } else { print("error")}
   #if(is.na(dam_yeari)) print(paste(ij,dam_indd[iks],dam_yeari))
   # choose declarations from years dam_yeari-4:dam_yeari-1 and thus also not in declaration ij
-  KUVA <- F
+  if(!exists("KUVA")) KUVA <- T
   clctDist <- 16*7 # possible range to be checked
   #UUSI <- T
   ntmpi <- which(yyd<=(max(yi)+clctDist) & yyd>=(min(yi)-clctDist) & 
