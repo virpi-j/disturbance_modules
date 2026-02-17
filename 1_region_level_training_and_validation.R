@@ -337,7 +337,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
         declData <- XYdamages[ntmp,c("x","y","dam_id","dam_year","forestdamagequalifier","cuttingrealizationpractice")]
         colnames(declData) <- cbind("xxd","yyd","dam_idd","dam_yeard","dam_indd","dam_crpd")
         declData$dam_yeard <- as.numeric(declData$dam_yeard)
-        print(unique(declData$dam_yeard))
+        print(sort(unique(declData$dam_yeard)))
         declData[,damCCutInt := as.integer(dam_crpd%in%cuttinginpractise)]
         declData$damCCutInt[declData$damCCutInt==0] <- 1e12
         print(paste("CCut obs. n =",length(which(declData$damCCutInt==1))))

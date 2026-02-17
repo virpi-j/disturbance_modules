@@ -79,6 +79,9 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 150, KUVA = F){
           ijsd <- which(apply(damYInt*distances,1,min)<clctDist**2) # which decl data is closest
         }
         declData <- declData[ijsd,]
+        print(paste("segm year",dam_yeari[1]))
+        print("neighbor years")
+        print(unique(declData$dam_yeard))
         damYInt <- damYInt[ijsd,]
         distances <- distances[ijsd,]
         n_neigh <- length(ijsd)
