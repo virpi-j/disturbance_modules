@@ -99,7 +99,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     load(file=paste0(savepath,"/",fname))
     print(paste("File",fname,"opened"))
     
-    XYdamages <- XYdamages[dam_year>2018 & dam_year<2024,]
+    XYdamages <- XYdamages[dam_year>2010 & dam_year<2024,]
     XYdamages <- XYdamages[which(!is.na(pine)&!is.na(spruce)&!is.na(birch)),] # remove data where there was NAs
     gc()
     
@@ -337,7 +337,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
         declData <- XYdamages[ntmp,c("x","y","dam_id","dam_year","forestdamagequalifier","cuttingrealizationpractice")]
         colnames(declData) <- cbind("xxd","yyd","dam_idd","dam_yeard","dam_indd","dam_crpd")
         declData$dam_yeard <- as.numeric(declData$dam_yeard)
-
+        print(unique(declData$dam_yeard))
         declData[,damCCutInt := as.integer(dam_crpd%in%cuttinginpractise)]
         declData$damCCutInt[declData$damCCutInt==0] <- 1e12
         print(paste("CCut obs. n =",length(which(declData$damCCutInt==1))))
