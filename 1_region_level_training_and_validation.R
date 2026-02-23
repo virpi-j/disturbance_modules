@@ -99,8 +99,13 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     load(file=paste0(savepath,"/",fname))
     print(paste("File",fname,"opened"))
     
-    XYdamages <- XYdamages[dam_year>2010 & dam_year<2024,]
-    XYdamages <- XYdamages[which(!is.na(pine)&!is.na(spruce)&!is.na(birch)),] # remove data where there was NAs
+    XYdamages <- XYdamages[which(!is.na(XYdamages$pine)),]
+    #XYdams <- XYdamages[,c("forestdamagequalifier","cuttingpurpose",
+    #                       "cuttingrealizationpractice","dam_year",
+    #                       "dam_id","segID",
+    #                       "x","y")]
+    XYdamages <- XYdamages[dam_year>2015 & dam_year<2024,]
+    #XYdamages <- XYdamages[dam_year>2010 & dam_year<2024,]
     gc()
     
     IDsUniq <- unique(XYdamages[,c("dam_id","segID")])
@@ -117,7 +122,8 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     XYdam_uniqueSegm[,area := N*16^2/100^2]
     
     #if(weighted) tt <- tt[tt$dam_year>=2019,]
-    XYdam_uniqueSegm <- XYdam_uniqueSegm[segID%in%data.all$segID,] # some damage polygons are outside the landclasses 1:2
+    ni <- which(XYdam_uniqueSegm$segID%in%data.all$segID)
+    XYdam_uniqueSegm2 <- XYdam_uniqueSegm[segID%in%data.all$segID,] # some damage polygons are outside the landclasses 1:2
     gc()
     
     if(TRUE){
@@ -326,7 +332,18 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
       print("neighbors for training set")}
       if(ik==2){ dataS <- sampleValidation
       print("neighbors for validation set")}
+      
       # all declarations, all coordinates and years of interest
+      fname <- paste0("DeclaredDamages_",dam_names[inds],"_rno",r_no,"_",regnames[r_noi],".rdata")
+      load(file=paste0(savepath,"/",fname))
+      print(paste("File",fname,"opened for neighbor analysis"))
+      tmpname <- paste(XYdamages$dam_id,XYdamages$segID)
+      XYdamages[,damSegID := 0]
+      nn <- which(tmpname%in%paste(IDsUniq$dam_id,IDsUniq$segID))
+      XYdamages[nn,damSegID := match(tmpname[nn],
+                                     paste(IDsUniq$dam_id,IDsUniq$segID))]
+        
+      
       ntmp <- which(XYdamages$cuttingrealizationpractice%in%cuttinginpractise | 
                       XYdamages$forestdamagequalifier==dam_indexs[dam_names=="SBB"] |
                       XYdamages$forestdamagequalifier==dam_indexs[dam_names=="wind"])
@@ -415,7 +432,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
         timeT <- Sys.time()
         outputNeighbor <- apply(data.table(c(1:nSegs)),1,neighborsAll,
                                 dataS=dataS,
-                                declData=declDataor, clctDist=150,KUVA=F)
+                                declData=declDataor, clctDist=200,KUVA=F)
         
       }  
       print("done.")
@@ -546,6 +563,10 @@ trainingSetCreation <- function(r_noi, sampleXs, dataS, startingYear=2015, endin
   #sampleXs <- multiout
   
   timeCol <- as.numeric(dataS$dam_year)-2015
+  #negtime <- which(timeCol<=0)
+  #dataS$forestdamagequalifier[negtime] <- 0
+  #dataS$dam_year[negtime] <- sample(2016:max(unique(dataS$dam_year)), length(negtime), replace = T)
+  #timeCol <- as.numeric(dataS$dam_year)-2015
   apick <- function(a,timeCol){
     nI <- nrow(a)
     y <- array(0,c(nI,1))
@@ -1033,10 +1054,10 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
                         rcps = rcps0,  
                         harvScen="Base",sampleX = dataS, 
                         harvInten="Base", forceSaveInitSoil=T)
-      print("grossgrowth")
-      print(round(apply(out$region$multiOut[1,1:10,"grossGrowth",,1],1,sum),1))
-      print("V")
-      print(round(apply(out$region$multiOut[1,1:10,"V",,1],1,sum),1))
+      print("average grossgrowth")
+      print(round(colMeans(apply(out$region$multiOut[,1:10,"grossGrowth",,1],1:2,sum)),1))
+      print("average V")
+      print(round(colMeans(apply(out$region$multiOut[,1:10,"V",,1],1:2,sum)),1))
       rm(list=setdiff(ls(), toMem2))
       gc()
       
@@ -1061,15 +1082,15 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
                                disturbanceON = disturbanceON)
         rm(list=setdiff(ls(),c(toMem2,"sampleXs")))
         gc()
-        print("grossgrowth")
-        print(round(apply(sampleXs$region$multiOut[1,1:6,"grossGrowth",,1],1,sum),1))
-        print("V")
-        print(round(apply(sampleXs$region$multiOut[1,1:6,"V",,1],1,sum),1))
-        print("bb prob")
+        print("average grossgrowth")
+        print(round(colMeans(apply(sampleXs$region$multiOut[,,"grossGrowth",,1],1:2,sum)),1))
+        print("average V")
+        print(round(colMeans(apply(sampleXs$region$multiOut[,,"V",,1],1:2,sum)),1))
+        print("bb prob for segm 1")
         print(sampleXs$region$multiOut[1,1:6,"Rh/SBBpob[layer_1]",1,2])
-        print("fire prob")
+        print("fire prob for segm 1")
         print(sampleXs$region$multiOut[1,1:6,"W_wsap/fireRisk[layer_1]",1,2])
-        print("wind prob")
+        print("wind prob for segm 1")
         print(sampleXs$region$outDist[1,1:6,"wrisk"])
         
         print(paste("SBB area",sum(dataS$area[which(dataS$forestdamagequalifier=="1602")])))
