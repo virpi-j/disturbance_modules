@@ -1,5 +1,6 @@
-neighborsAll <- function(ij, dataS, declData, clctDist = 150, KUVA = F){
+neighborsAll <- function(ij, dataS, declData, dataSS, clctDist = 150, KUVA = F){
   if(KUVA) print(paste0("rno",r_noi,": id ",ij))
+  sysT <- Sys.time()
   if(!exists("clctDist")) clctDist <- 150
   if((ij)%%min(1000,round(nSegs/4))==0){
     timeT2 <- Sys.time()
@@ -9,19 +10,20 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 150, KUVA = F){
   }
   damSegIDij <- dataS$damSegID[ij]
   # forestdamagequalifier in declarations: a number or NA, in sample 0
-  if(is.na(dataS$forestdamagequalifier[ij]) | dataS$forestdamagequalifier[ij]>0){ # in declarations
-    iks <- which(XYdamages$damSegID==damSegIDij)
-    dam_yeari <- as.numeric(XYdamages$dam_year[iks[1]]) # damage year of the dam_id
-    xi <- XYdamages$x[iks]
-    yi <- XYdamages$y[iks]
-    damidi <- XYdamages$dam_id[iks]
-  } else if(dataS$forestdamagequalifier[ij]==0){          # in sample
-    iks <- which(dataS$damSegID==damSegIDij) # all segments in the dam_id
-    dam_yeari <- as.numeric(dataS$dam_year[iks[1]]) # damage year of the dam_id
-    xi <- dataS$x[iks]
-    yi <- dataS$y[iks]
-    damidi <- dataS$dam_id[iks]
-  } else { print("error")}
+  #if(is.na(dataS$forestdamagequalifier[ij]) | dataS$forestdamagequalifier[ij]>0){ # in declarations
+    iks <- which(dataSS$damSegID==damSegIDij)
+    dam_yeari <- as.numeric(dataSS$dam_year[iks])[1]
+    xi <- unlist(dataSS$x[iks])
+    yi <- unlist(dataSS$y[iks])
+    damidi <- as.character(unlist(dataSS$dam_id[iks]))[1]
+    if(length(iks)==0) print(paste("error",ij))
+  #} else if(dataS$forestdamagequalifier[ij]==0){          # in sample
+  #  iks <- which(dataS$damSegID==damSegIDij) # all segments in the dam_id
+  #  dam_yeari <- as.numeric(dataS$dam_year[iks[1]]) # damage year of the dam_id
+  #  xi <- dataS$x[iks]
+  #  yi <- dataS$y[iks]
+  #  damidi <- dataS$dam_id[iks]
+  #} else { print("error")}
   #if(is.na(dam_yeari)) print(paste(ij,dam_indd[iks],dam_yeari))
   # choose declarations from years dam_yeari-4:dam_yeari-1 and thus also not in declaration ij
    # possible range to be checked clctDist
@@ -252,6 +254,7 @@ neighborsAll <- function(ij, dataS, declData, clctDist = 150, KUVA = F){
     ############################################################
   
   out <- c(dclct, dSBB, dWind, dclct_south)
+  #print(paste(ij,Sys.time()-sysT))
   #print(out)
   return(out)
 }
