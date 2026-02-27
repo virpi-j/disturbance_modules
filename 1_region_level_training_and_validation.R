@@ -132,9 +132,8 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     data.IDs[,area:=N*16^2/100^2]
     
     df <- cbind(data.all[,c("segID","area")],data.IDs[match(data.all$segID,data.IDs$segID),c("segID","area")])
-    #df <- cbind(data.all[match(data.IDs$segID,data.all$segID),c("segID","area")],data.IDs[,"area"])
     data.all$area <- apply(df[,c(2,4)],1,min)
-    rm("df"); gc()    
+    rm(list=c("df","data.IDs")); gc()    
     ni <- which(data.all$segID%in%XYdam_uniqueSegm$segID)
     areas <- XYdam_uniqueSegm[,sum(area),by = list(segID)]
     #ni1 <- ni[which(abs(areas[match(data.all$segID[ni],areas$segID),"V1"]-data.all$area[ni])<1e-5)]
@@ -176,20 +175,22 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
   }
   
   ########################
-  load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
-  data.IDs$segID <- data.IDs$maakuntaID
-  data.IDs <- data.IDs[segID!=0]
-  data.IDs <- data.IDs[which(data.IDs$segID%in%data.all$segID),]
+  #load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
+  #data.IDs$segID <- data.IDs$maakuntaID
+  #data.IDs <- data.IDs[segID!=0]
+  data.IDs <- data.IDSor[which(data.IDSor$segID%in%data.all$segID),]
   gc()
   setkey(data.IDs,segID)
   setkey(data.all,segID)
   tabX <- merge(data.IDs,data.all) # coords of the segments in sample outside declarations
-  x <- tabX$x[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
-  y <- tabX$y[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
+  data.all[,x:=tabX$x[match(data.all$segID,tabX$segID)]]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
+  data.all[,y:=tabX$y[match(data.all$segID,tabX$segID)]]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
+  #x <- tabX$x[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
+  #y <- tabX$y[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
   rm("tabX"); gc()
-  data.all[,x:=x]
-  data.all[,y:=y]
-  rm(list=c("x","y")); gc()
+  #data.all[,x:=x]
+  #data.all[,y:=y]
+  #rm(list=c("x","y")); gc()
 
   KUVA <- F
   if(KUVA){
@@ -261,7 +262,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     rm(list=c("data.all2","XYdam_uniqueSegm")); gc()
   }
   
-  # validation set as a completelly random set
+  # validation set as a completely random set
   data.all <- data.all[which(data.all$dam_year>2015 & data.all$dam_year<2024),]
   gc()
   ni <- sample(1:nrow(data.all), nSegs, replace=F)
@@ -321,7 +322,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
                       XYdamages$forestdamagequalifier==dam_indexs[dam_names=="wind"])
       ntmp <- ntmp[order(XYdamages$y[ntmp],XYdamages$x[ntmp],decreasing = T)]
       
-      NEWf <- T
+      #NEWf <- T
       if(TRUE){
         #print("get sample coordinates for segs not in declarations")
         #dataSS <- dataS[which(dataS$forestdamagequalifier==0),c("dam_id","dam_year","forestdamagequalifier","cuttingrealizationpractice","segID")]
@@ -330,6 +331,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
         ij <- 1
         #for(ij in 1:nrow(dataSS)){
         xxtmp <- data.IDSor[which(data.IDSor$segID%in%dataSS$segID),]
+        #rm("data.IDsor"); gc()
         yytmp <- XYdamages[which(XYdamages$segID%in%dataSS$segID),]
         getDataScoords <- function(ij){
           #if(ij>nSegs) 
@@ -367,6 +369,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
         rm(list=c("xxtmp","yytmp","NN")); gc()
       }
       declData <- XYdamages[ntmp,c("x","y","dam_id","dam_year","forestdamagequalifier","cuttingrealizationpractice")]
+      rm(list=c("ntmp","XYdamages")); gc()
       colnames(declData) <- cbind("xxd","yyd","dam_idd","dam_yeard","dam_indd","dam_crpd")
       declData$dam_yeard <- as.numeric(declData$dam_yeard)
       print(sort(unique(declData$dam_yeard)))
