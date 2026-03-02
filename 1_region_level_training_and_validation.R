@@ -262,8 +262,8 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     rm(list=c("data.all2","XYdam_uniqueSegm")); gc()
   }
   
-  # validation set as a completely random set
-  data.all <- data.all[which(data.all$dam_year>2015 & data.all$dam_year<2024),]
+  # validation set as a completely random set for period 2019-2023
+  data.all <- data.all[which(data.all$dam_year>2018 & data.all$dam_year<2024),]
   gc()
   ni <- sample(1:nrow(data.all), nSegs, replace=F)
   sampleValidation <- data.all[ni,]
@@ -454,6 +454,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
   return(samples)
   rm(list=setdiff(ls(),toMem))
   gc()
+  
   
 }
 
