@@ -109,10 +109,30 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     # Give segments that are split with declaration polygons, a unique name
     XYdamages[,damSegID := match(paste(XYdamages$dam_id,XYdamages$segID),
                                  paste(IDsUniq$dam_id,IDsUniq$segID))]
-    XYdamagesor <- XYdamages <- XYdamages[dam_year>2010 & dam_year<2024,]
-    #XYdamages <- XYdamages[dam_year>2015 & dam_year<2024,]
   }
   if(climScen==0){
+    # Remove segments with SegIDs from XYdamages, that are not in data.all
+    nii<- match(XYdamages$segID,data.all$segID)
+    XYdamages <- XYdamages[which(!is.na(nii)),]
+    rm("nii"); gc()
+    # Find the rows and columns in data.all
+    #nii<- match(XYdamages$segID,data.all$segID)
+    # All columns except area and N from data.all to XYdamages
+    njj1 <- vars_to_prebas #setdiff(vars_to_prebas,c("area","N"))
+    njj2 <- setdiff(colnames(XYdamages),njj1)
+    # find data for these columns from data.all
+    XYdamages <- cbind(XYdamages[,..njj2],
+                        data.all[match(XYdamages$segID,data.all$segID),..njj1])
+    njj <- setdiff(colnames(XYdamages),vars_to_prebas)
+    XYdamages <- cbind(XYdamages[,..vars_to_prebas],XYdamages[,..njj])
+    
+    #nii <- data.all[nii,..varsInDataall]
+    #varsInDataall <- which(colnames(XYdamages)%in%vars_to_prebas)
+    #XYdamages[,varsInDataall] <- nii
+    rm(list=c("njj","njj2","njj1")); gc()
+    XYdamagesor <- XYdamages <- XYdamages[dam_year>2010 & dam_year<2024,]
+    #XYdamages <- XYdamages[dam_year>2015 & dam_year<2024,]
+    
     areas <- XYdamages[, .N, by = list(damSegID)]
     XYdam_uniqueSegm <- XYdamages[XYdamages[,.I[which.max(spruce)], by=damSegID]$V1] # one row for each segment
     XYdam_uniqueSegm[,N := areas[match(areas$damSegID, XYdam_uniqueSegm$damSegID),"N"]]
@@ -141,11 +161,6 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     data.all <- data.all[setdiff(1:nrow(data.all),ni),]
     rm("areas"); gc()    
     
-    not_in_XYdam_uniqueSegm <- colnames(data.all)[which(!(colnames(data.all)%in%
-                                                            colnames(XYdam_uniqueSegm)))]
-    # find data for these columns from data.all
-    XYdam_uniqueSegm <- cbind(XYdam_uniqueSegm,
-                              data.all[match(XYdam_uniqueSegm$segID,data.all$segID),..not_in_XYdam_uniqueSegm])
     ######################### clearcuts?
     # types of cuttings classified as clearcut
     cuttinginpractise <- c(5, 8, 16, 17, 19, 21, 22, 24)
@@ -227,13 +242,6 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
   
   ###### combine data.all and XYdam_uniqueSegm
   if(climScen==0){
-    # Which columns are in 
-    XYdam_uniqueSegm_names_in <- which(colnames(XYdam_uniqueSegm)%in%vars_to_prebas)
-    dataAll_names_in <- which(vars_to_prebas%in%colnames(XYdam_uniqueSegm))
-    
-    # rows in data.all, which are in XYdam_uniqueSegm data
-    #ni <- which((data.all$segID %in% XYdam_uniqueSegm$segID))
-    
     # for the XYdam_uniqueSegm data, add data.all information -> All variables already included!
     #tmp <- data.all[ni[match(XYdam_uniqueSegm$segID, data.all$segID[ni])],]
     # Sort columns of XYdam_uniqueSegm -> first data.all-columns, then decl information
@@ -244,7 +252,6 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
     #nicols <- which(!colnames(XYdam_uniqueSegm)%in%vars_to_prebas)
     #XYcols <- colnames(XYdam_uniqueSegm)[nicols]
     #XYdam_uniqueSegm <- cbind(tmp,XYdam_uniqueSegm[,..nicols])
-    
     # rows in data.all, which are not in XYdam_uniqueSegm data
     #ni <- which(!(data.all$segID %in% XYdam_uniqueSegm$segID))
     #data.all <- cbind(data.all[ni,],array(0,c(length(ni), length(XYcols))))
@@ -314,6 +321,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
         dataS <- sampleValidation
         print("neighbors for validation set")
       }
+      print(head(dataS))
       # all declarations, all coordinates and years of interest
       XYdamages <- XYdamagesor      
       
