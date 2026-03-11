@@ -956,7 +956,12 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
     
     for(setid in setid0:setid1){ # Go through training and validation sets
       toMem3 <- ls()
-      dataS <- sample[[setid]] # setid=1 for training, setid=2 for validation  
+      dataS <- sample[[setid]] # setid=1 for training, setid=2 for validation 
+      if(!exists("testing")) testing <- F
+      if(testing){ 
+        dataS <- dataS[sample(1:nrow(dataS),min(nrow(dataS),100)),]
+        print("test with a small sample")
+      }
       cols_in_prebas <- which(colnames(dataS)%in%c(sample$vars_to_prebas,"x","y"))
       area_tot <- totArea <- sample$areatot
       # PREBAS runs
@@ -972,7 +977,7 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
       # fmi data from allas
       if(fmi_from_allas){
         toMemFmi <- ls()
-        source("0.5_get_fmi_from_allas.R")
+        source("~/finruns_to_update/0.5_get_fmi_from_allas.R")
         repo <- "ForModLabUHel/fmi.weather.finland"
         file_path <- "r/init_setup.R"
         branch <- "main"
