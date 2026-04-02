@@ -400,7 +400,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
       declDataor <- declData#[idns,]
       rm("declData")
       gc()
-      dlim <- 150
+      dlim <- 1000
       clearcutNeighbor_SBB <- clearcutNeighbor_wind <- 
         clearcutNeighbor <- clearcutNeighbor_south <- 
         matrix(NA,nSegs,3) 
