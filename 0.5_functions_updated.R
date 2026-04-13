@@ -2,7 +2,7 @@ neighborsAll <- function(ij, dataS, declData, dataSS, clctDist = 150, KUVA = F){
   if(KUVA) print(paste0("rno",r_noi,": id ",ij))
   sysT <- Sys.time()
   if(!exists("clctDist")) clctDist <- 150
-  #print(paste("clctDist =",clctDist))
+  if(ij==1) print(paste("clctDist =",clctDist))
   if((ij)%%min(1000,round(nSegs/4))==0){
     timeT2 <- Sys.time()
     tperiter<- timeT2-timeT
