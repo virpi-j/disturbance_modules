@@ -79,7 +79,8 @@ dam_names <- c("alldeclarations","all","SBB","wind","fire","moose")
 dam_indexs <- c("all","0","1602","1504","1503","1650")
 
 inds <- 1
-calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, climScen=0){
+calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, 
+                               climScen=0, usePreviousIDs = F){
   toMem <- ls()
   r_no <- rnos[r_noi]
   
@@ -92,217 +93,232 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
   source("/scratch/project_2000994/PREBASruns/adaptFirst/Rsrc/Settings_IBCCarbon.R", local=TRUE)  
   vars_to_prebas <- colnames(data.all)
   areatot <- sum(data.all$area)
-  
-  if(climScen==0 | r_no %in% c(8,9)){
+  if(usePreviousIDs){
+    print("Use previous sample set IDs to generate neigh info")
+    load(paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/MKIdata/samples_train_valid_",r_noi,".rdata"))
+    sampleTraining <- samples$sampleTraining[,1:36]
+    sampleValidation <- samples$sampleValidation[,1:36]
+    rm(list="samples"); gc()
+  } else {
+    if(climScen==0 | r_no %in% c(8,9)){
+      
+      fname <- paste0("DeclaredDamages_",dam_names[inds],"_rno",r_no,"_",regnames[r_noi],".rdata")
+      load(file=paste0(savepath,"/",fname))
+      print(paste("File",fname,"opened"))
+      
+      # remove if species is na
+      XYdamages <- XYdamages[which(!is.na(XYdamages$pine)),]
+      gc()
+      
+      IDsUniq <- unique(XYdamages[,c("dam_id","segID")])
+      IDsUniq[,damSegID:=1:nrow(IDsUniq)]
+      
+      # Give segments that are split with declaration polygons, a unique name
+      XYdamages[,damSegID := match(paste(XYdamages$dam_id,XYdamages$segID),
+                                   paste(IDsUniq$dam_id,IDsUniq$segID))]
+    }
+    if(climScen==0){
+      # Remove segments with SegIDs from XYdamages, that are not in data.all
+      nii<- match(XYdamages$segID,data.all$segID)
+      XYdamages <- XYdamages[which(!is.na(nii)),]
+      rm("nii"); gc()
+      # Find the rows and columns in data.all
+      #nii<- match(XYdamages$segID,data.all$segID)
+      # All columns except area and N from data.all to XYdamages
+      njj1 <- vars_to_prebas #setdiff(vars_to_prebas,c("area","N"))
+      njj2 <- setdiff(colnames(XYdamages),njj1)
+      # find data for these columns from data.all
+      XYdamages <- cbind(XYdamages[,..njj2],
+                         data.all[match(XYdamages$segID,data.all$segID),..njj1])
+      njj <- setdiff(colnames(XYdamages),vars_to_prebas)
+      XYdamages <- cbind(XYdamages[,..vars_to_prebas],XYdamages[,..njj])
     
-    fname <- paste0("DeclaredDamages_",dam_names[inds],"_rno",r_no,"_",regnames[r_noi],".rdata")
-    load(file=paste0(savepath,"/",fname))
-    print(paste("File",fname,"opened"))
+      #nii <- data.all[nii,..varsInDataall]
+      #varsInDataall <- which(colnames(XYdamages)%in%vars_to_prebas)
+      #XYdamages[,varsInDataall] <- nii
+      rm(list=c("njj","njj2","njj1")); gc()
+      XYdamagesor <- XYdamages <- XYdamages[dam_year>2010 & dam_year<2024,]
+      #XYdamages <- XYdamages[dam_year>2015 & dam_year<2024,]
+      
+      areas <- XYdamages[, .N, by = list(damSegID)]
+      XYdam_uniqueSegm <- XYdamages[XYdamages[,.I[which.max(spruce)], by=damSegID]$V1] # one row for each segment
+      XYdam_uniqueSegm[,N := areas[match(areas$damSegID, XYdam_uniqueSegm$damSegID),"N"]]
+      XYdam_uniqueSegm[,area := N*16^2/100^2]
+      
+      # only segments which are in data.all
+      ni <- which(XYdam_uniqueSegm$segID%in%data.all$segID)
+      XYdam_uniqueSegm <- XYdam_uniqueSegm[segID%in%data.all$segID,] # some damage polygons are outside the landclasses 1:2
+      gc()
     
-    # remove if species is na
-    XYdamages <- XYdamages[which(!is.na(XYdamages$pine)),]
-    gc()
-    
-    IDsUniq <- unique(XYdamages[,c("dam_id","segID")])
-    IDsUniq[,damSegID:=1:nrow(IDsUniq)]
-    
-    # Give segments that are split with declaration polygons, a unique name
-    XYdamages[,damSegID := match(paste(XYdamages$dam_id,XYdamages$segID),
-                                 paste(IDsUniq$dam_id,IDsUniq$segID))]
-  }
-  if(climScen==0){
-    # Remove segments with SegIDs from XYdamages, that are not in data.all
-    nii<- match(XYdamages$segID,data.all$segID)
-    XYdamages <- XYdamages[which(!is.na(nii)),]
-    rm("nii"); gc()
-    # Find the rows and columns in data.all
-    #nii<- match(XYdamages$segID,data.all$segID)
-    # All columns except area and N from data.all to XYdamages
-    njj1 <- vars_to_prebas #setdiff(vars_to_prebas,c("area","N"))
-    njj2 <- setdiff(colnames(XYdamages),njj1)
-    # find data for these columns from data.all
-    XYdamages <- cbind(XYdamages[,..njj2],
-                        data.all[match(XYdamages$segID,data.all$segID),..njj1])
-    njj <- setdiff(colnames(XYdamages),vars_to_prebas)
-    XYdamages <- cbind(XYdamages[,..vars_to_prebas],XYdamages[,..njj])
-    
-    #nii <- data.all[nii,..varsInDataall]
-    #varsInDataall <- which(colnames(XYdamages)%in%vars_to_prebas)
-    #XYdamages[,varsInDataall] <- nii
-    rm(list=c("njj","njj2","njj1")); gc()
-    XYdamagesor <- XYdamages <- XYdamages[dam_year>2010 & dam_year<2024,]
-    #XYdamages <- XYdamages[dam_year>2015 & dam_year<2024,]
-    
-    areas <- XYdamages[, .N, by = list(damSegID)]
-    XYdam_uniqueSegm <- XYdamages[XYdamages[,.I[which.max(spruce)], by=damSegID]$V1] # one row for each segment
-    XYdam_uniqueSegm[,N := areas[match(areas$damSegID, XYdam_uniqueSegm$damSegID),"N"]]
-    XYdam_uniqueSegm[,area := N*16^2/100^2]
-    
-    ni <- which(XYdam_uniqueSegm$segID%in%data.all$segID)
-    XYdam_uniqueSegm <- XYdam_uniqueSegm[segID%in%data.all$segID,] # some damage polygons are outside the landclasses 1:2
-    gc()
+      load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
+      data.IDs$segID <- data.IDs$maakuntaID
+      data.IDSor <- data.IDs <- data.IDs[segID!=0]
 
-    load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
-    data.IDs$segID <- data.IDs$maakuntaID
-    data.IDs <- data.IDs[segID!=0]
-    data.IDSor <- data.IDs
+      data.IDs <- data.IDs[which(data.IDs$segID%in%data.all$segID),]
+      data.IDs <- data.IDs[,.N,by=list(segID)]
+      data.IDs[,area:=N*16^2/100^2]
+      
+      ##
+      
+      
+      ### raster pixel areas do not match with data.all areas... take minimum
+      df <- cbind(data.all[,c("segID","area")],data.IDs[match(data.all$segID,data.IDs$segID),c("segID","area")])
+      data.all$area <- apply(df[,c(2,4)],1,min)
+      rm(list=c("df","data.IDs")); gc()    
+      ni <- which(data.all$segID%in%XYdam_uniqueSegm$segID)
+      areas <- XYdam_uniqueSegm[,sum(area),by = list(segID)] # segID area, split to damsegIDs 
+      
+        
+      ni <- ni[which(data.all$area[ni]-
+                       areas[match(data.all$segID[ni],areas$segID),"V1"]<=3*0.16^2)]
+      data.all <- data.all[setdiff(1:nrow(data.all),ni),]
+      rm("areas"); gc()    
+      
+      ######################### clearcuts?
+      # types of cuttings classified as clearcut
+      cuttinginpractise <- c(5, 8, 16, 17, 19, 21, 22, 24)
+      yrs <- sort(as.numeric(unique(XYdam_uniqueSegm$dam_year)))
+      
+      if(TRUE){
+        # function for yearly damaged areas
+        areasDam <- function(x,id) sum(XYdam_uniqueSegm$area[
+          which(XYdam_uniqueSegm$forestdamagequalifier==id & XYdam_uniqueSegm$dam_year==x)])
+        # function for yearly damaged areas that are clearcut
+        areasDamClct <- function(x,id) sum(XYdam_uniqueSegm$area[
+          which(XYdam_uniqueSegm$forestdamagequalifier==id & XYdam_uniqueSegm$dam_year==x  & 
+                  XYdam_uniqueSegm$cuttingrealizationpractice%in%cuttinginpractise)])
+        
+        # Table for saving the damage infor
+        damInfo <- array(0,c(8,length(yrs)),
+                         dimnames = list(c("alldeclarea","alldeclclctarea","SBBarea","SBBclctarea","windarea",
+                                           "windclctarea","firearea","fireclctarea"),paste0("Year",yrs)))
+        for(y in 1:length(yrs)) damInfo[1,y] <- sum(XYdam_uniqueSegm$area[which(XYdam_uniqueSegm$dam_year==yrs[y])])
+        for(y in 1:length(yrs)) damInfo[2,y] <- sum(XYdam_uniqueSegm$area[which(XYdam_uniqueSegm$dam_year==yrs[y] & XYdam_uniqueSegm$cuttingrealizationpractice%in%cuttinginpractise)])
+        for(y in 1:length(yrs)) damInfo[3,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="SBB")])
+        for(y in 1:length(yrs)) damInfo[4,y] <- areasDamClct(yrs[y],dam_indexs[which(dam_names=="SBB")])
+        for(y in 1:length(yrs)) damInfo[5,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="wind")])
+        for(y in 1:length(yrs)) damInfo[6,y] <- areasDamClct(yrs[y],dam_indexs[which(dam_names=="wind")])
+        for(y in 1:length(yrs)) damInfo[7,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="fire")])
+        for(y in 1:length(yrs)) damInfo[8,y] <- areasDamClct(yrs[y],dam_indexs[which(dam_names=="fire")])
+        #if(weighted) save(damInfo,file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/damInfo_",r_noi,".rdata"))
+      }
+    }
     
-    data.IDs <- data.IDs[which(data.IDs$segID%in%data.all$segID),]
-    data.IDs <- data.IDs[,.N,by=list(segID)]
-    data.IDs[,area:=N*16^2/100^2]
-    
-    df <- cbind(data.all[,c("segID","area")],data.IDs[match(data.all$segID,data.IDs$segID),c("segID","area")])
-    data.all$area <- apply(df[,c(2,4)],1,min)
-    rm(list=c("df","data.IDs")); gc()    
-    ni <- which(data.all$segID%in%XYdam_uniqueSegm$segID)
-    areas <- XYdam_uniqueSegm[,sum(area),by = list(segID)]
-    #ni1 <- ni[which(abs(areas[match(data.all$segID[ni],areas$segID),"V1"]-data.all$area[ni])<1e-5)]
-    ni <- ni[which(data.all$area[ni]-areas[match(data.all$segID[ni],areas$segID),"V1"]<1e-5)]
-    data.all <- data.all[setdiff(1:nrow(data.all),ni),]
-    rm("areas"); gc()    
-    
-    ######################### clearcuts?
-    # types of cuttings classified as clearcut
-    cuttinginpractise <- c(5, 8, 16, 17, 19, 21, 22, 24)
-    yrs <- sort(as.numeric(unique(XYdam_uniqueSegm$dam_year)))
-    
-    # function for yearly damaged areas
-    areasDam <- function(x,id) sum(XYdam_uniqueSegm$area[
-      which(XYdam_uniqueSegm$forestdamagequalifier==id & XYdam_uniqueSegm$dam_year==x)])
-    # function for yearly damaged areas that are clearcut
-    areasDamClct <- function(x,id) sum(XYdam_uniqueSegm$area[
-      which(XYdam_uniqueSegm$forestdamagequalifier==id & XYdam_uniqueSegm$dam_year==x  & 
-              XYdam_uniqueSegm$cuttingrealizationpractice%in%cuttinginpractise)])
-    
-    # Table for saving the damage infor
-    damInfo <- array(0,c(8,length(yrs)),
-                     dimnames = list(c("alldeclarea","alldeclclctarea","SBBarea","SBBclctarea","windarea",
-                                       "windclctarea","firearea","fireclctarea"),paste0("Year",yrs)))
-    for(y in 1:length(yrs)) damInfo[1,y] <- sum(XYdam_uniqueSegm$area[which(XYdam_uniqueSegm$dam_year==yrs[y])])
-    for(y in 1:length(yrs)) damInfo[2,y] <- sum(XYdam_uniqueSegm$area[which(XYdam_uniqueSegm$dam_year==yrs[y] & XYdam_uniqueSegm$cuttingrealizationpractice%in%cuttinginpractise)])
-    for(y in 1:length(yrs)) damInfo[3,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="SBB")])
-    for(y in 1:length(yrs)) damInfo[4,y] <- areasDamClct(yrs[y],dam_indexs[which(dam_names=="SBB")])
-    for(y in 1:length(yrs)) damInfo[5,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="wind")])
-    for(y in 1:length(yrs)) damInfo[6,y] <- areasDamClct(yrs[y],dam_indexs[which(dam_names=="wind")])
-    for(y in 1:length(yrs)) damInfo[7,y] <- areasDam(yrs[y],dam_indexs[which(dam_names=="fire")])
-    for(y in 1:length(yrs)) damInfo[8,y] <- areasDamClct(yrs[y],dam_indexs[which(dam_names=="fire")])
-    #if(weighted) save(damInfo,file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/damInfo_",r_noi,".rdata"))
-  }
-  
-  ########################
-  #load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
-  #data.IDs$segID <- data.IDs$maakuntaID
-  #data.IDs <- data.IDs[segID!=0]
-  data.IDs <- data.IDSor[which(data.IDSor$segID%in%data.all$segID),]
-  gc()
-  setkey(data.IDs,segID)
-  setkey(data.all,segID)
-  tabX <- merge(data.IDs,data.all) # coords of the segments in sample outside declarations
-  data.all[,x:=tabX$x[match(data.all$segID,tabX$segID)]]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
-  data.all[,y:=tabX$y[match(data.all$segID,tabX$segID)]]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
-  #x <- tabX$x[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
-  #y <- tabX$y[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
-  rm("tabX"); gc()
-  #data.all[,x:=x]
-  #data.all[,y:=y]
-  #rm(list=c("x","y")); gc()
-
-  KUVA <- F
-  if(KUVA){
+    ########################
+    #load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
+    #data.IDs$segID <- data.IDs$maakuntaID
+    #data.IDs <- data.IDs[segID!=0]
+    data.IDs <- data.IDSor[which(data.IDSor$segID%in%data.all$segID),]
+    gc()
+    setkey(data.IDs,segID)
     setkey(data.all,segID)
     tabX <- merge(data.IDs,data.all) # coords of the segments in sample outside declarations
-    x <- tabX$x[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
-    y <- tabX$y[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
-    ni <- sample(1:length(x),1000, replace = F)
-    plot(x[ni],y[ni])
-  }
-  rm("data.IDs"); gc()
-  if(r_no %in% c(8,9)){ # Lappi E and P: divide data.all according to y-coordinate
-    #setkey(data.all,segID)
-    #tabX <- merge(data.IDs,data.all) # coords of the segments in sample outside declarations
+    data.all[,x:=tabX$x[match(data.all$segID,tabX$segID)]]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
+    data.all[,y:=tabX$y[match(data.all$segID,tabX$segID)]]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
     #x <- tabX$x[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
     #y <- tabX$y[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
-    #rm("tabX"); gc()
-    xybb <- array(0,c(nrow(XYdamages),2))  
-    xybb[,1] <- XYdamages$x
-    xybb[,2] <- XYdamages$y
-    xx <- bbox(xybb)
-    rm("xybb"); gc()
-    if(r_no == 8){ 
-      yLappiEP <- xx[2,2] 
-      data.all <- data.all[y<=yLappiEP,]
-      gc()
-    }
-    if(r_no == 9) { 
-      yLappiEP <- xx[2,1] 
-      data.all <- data.all[y>=yLappiEP,]
-      gc()
-    }
-  }
-  
-  ###### combine data.all and XYdam_uniqueSegm
-  if(climScen==0){
-    # for the XYdam_uniqueSegm data, add data.all information -> All variables already included!
-    #tmp <- data.all[ni[match(XYdam_uniqueSegm$segID, data.all$segID[ni])],]
-    # Sort columns of XYdam_uniqueSegm -> first data.all-columns, then decl information
-    nicols <- which(!colnames(XYdam_uniqueSegm)%in%vars_to_prebas)
-    XYcols <- colnames(XYdam_uniqueSegm)[nicols]
-    XYdam_uniqueSegm <- XYdam_uniqueSegm[,c(..vars_to_prebas,..XYcols)]
-    # get the shorter column ids  
-    #nicols <- which(!colnames(XYdam_uniqueSegm)%in%vars_to_prebas)
-    #XYcols <- colnames(XYdam_uniqueSegm)[nicols]
-    #XYdam_uniqueSegm <- cbind(tmp,XYdam_uniqueSegm[,..nicols])
-    # rows in data.all, which are not in XYdam_uniqueSegm data
-    #ni <- which(!(data.all$segID %in% XYdam_uniqueSegm$segID))
-    #data.all <- cbind(data.all[ni,],array(0,c(length(ni), length(XYcols))))
-    data.all2 <- data.table(array(0,dim=c(nrow(data.all),ncol(XYdam_uniqueSegm))))
-    colnames(data.all2) <- colnames(XYdam_uniqueSegm)
-    data.all2[,1:length(vars_to_prebas)] <- data.all[,1:length(vars_to_prebas)]
-    data.all2$x <- data.all$x 
-    data.all2$y <- data.all$y 
-    #colnames(data.all)[nicols] <- colnames(XYdam_uniqueSegm)[nicols]
-    data.all2$dam_year <- sample(yrs,nrow(data.all),replace = T) # give random year for monitoring
-    data.all2$dam_id <- data.all2$damSegID <- paste0("0",1:nrow(data.all)) # damageid starting with 0
+    rm("tabX"); gc()
+    #data.all[,x:=x]
+    #data.all[,y:=y]
+    #rm(list=c("x","y")); gc()
     
-    # Combine the two sets
-    data.all <- rbind(XYdam_uniqueSegm, data.all2)
-    rm(list=c("data.all2","XYdam_uniqueSegm")); gc()
-  }
-  
-  # validation set as a completely random set for period 2019-2023
-  data.all <- data.all[which(data.all$dam_year>2018 & data.all$dam_year<2024),]
-  gc()
-  ni <- sample(1:nrow(data.all), nSegs, replace=F)
-  sampleValidation <- data.all[ni,]
-  
-  if(climScen==0){
-    # training set from the rest of segments: 
-    data.all <- data.all[setdiff(1:nrow(data.all),ni),]
-    rm("ni"); gc()
+    KUVA <- F
+    if(KUVA){
+      setkey(data.all,segID)
+      tabX <- merge(data.IDs,data.all) # coords of the segments in sample outside declarations
+      x <- tabX$x[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
+      y <- tabX$y[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
+      ni <- sample(1:length(x),1000, replace = F)
+      plot(x[ni],y[ni])
+    }
+    rm("data.IDs"); gc()
+    if(r_no %in% c(8,9)){ # Lappi E and P: divide data.all according to y-coordinate
+      #setkey(data.all,segID)
+      #tabX <- merge(data.IDs,data.all) # coords of the segments in sample outside declarations
+      #x <- tabX$x[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
+      #y <- tabX$y[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
+      #rm("tabX"); gc()
+      xybb <- array(0,c(nrow(XYdamages),2))  
+      xybb[,1] <- XYdamages$x
+      xybb[,2] <- XYdamages$y
+      xx <- bbox(xybb)
+      rm("xybb"); gc()
+      if(r_no == 8){ 
+        yLappiEP <- xx[2,2] 
+        data.all <- data.all[y<=yLappiEP,]
+        gc()
+      }
+      if(r_no == 9) { 
+        yLappiEP <- xx[2,1] 
+        data.all <- data.all[y>=yLappiEP,]
+        gc()
+      }
+    }
+    
+    ###### combine data.all and XYdam_uniqueSegm
+    if(climScen==0){
+      # for the XYdam_uniqueSegm data, add data.all information -> All variables already included!
+      #tmp <- data.all[ni[match(XYdam_uniqueSegm$segID, data.all$segID[ni])],]
+      # Sort columns of XYdam_uniqueSegm -> first data.all-columns, then decl information
+      nicols <- which(!colnames(XYdam_uniqueSegm)%in%vars_to_prebas)
+      XYcols <- colnames(XYdam_uniqueSegm)[nicols]
+      XYdam_uniqueSegm <- XYdam_uniqueSegm[,c(..vars_to_prebas,..XYcols)]
+      # get the shorter column ids  
+      #nicols <- which(!colnames(XYdam_uniqueSegm)%in%vars_to_prebas)
+      #XYcols <- colnames(XYdam_uniqueSegm)[nicols]
+      #XYdam_uniqueSegm <- cbind(tmp,XYdam_uniqueSegm[,..nicols])
+      # rows in data.all, which are not in XYdam_uniqueSegm data
+      #ni <- which(!(data.all$segID %in% XYdam_uniqueSegm$segID))
+      #data.all <- cbind(data.all[ni,],array(0,c(length(ni), length(XYcols))))
+      data.all2 <- data.table(array(0,dim=c(nrow(data.all),ncol(XYdam_uniqueSegm))))
+      colnames(data.all2) <- colnames(XYdam_uniqueSegm)
+      data.all2[,1:length(vars_to_prebas)] <- data.all[,1:length(vars_to_prebas)]
+      data.all2$x <- data.all$x 
+      data.all2$y <- data.all$y 
+      #colnames(data.all)[nicols] <- colnames(XYdam_uniqueSegm)[nicols]
+      data.all2$dam_year <- sample(yrs,nrow(data.all),replace = T) # give random year for monitoring
+      data.all2$dam_id <- data.all2$damSegID <- paste0("0",1:nrow(data.all)) # damageid starting with 0
+      
+      # Combine the two sets
+      data.all <- rbind(XYdam_uniqueSegm, data.all2)
+      rm(list=c("data.all2","XYdam_uniqueSegm")); gc()
+    }
+    
+    # validation set as a completely random set for period 2019-2023
+    data.all <- data.all[which(data.all$dam_year>2018 & data.all$dam_year<2024),]
     gc()
+    ni <- sample(1:nrow(data.all), nSegs, replace=F)
+    sampleValidation <- data.all[ni,]
     
-    weightedTraining <- weighted
-    print(paste("weighted Training =",weighted))
-    if(weightedTraining){
-      # damaged segments, max nSegs/3 rows
-      damID <- dam_indexs[dam_names=="SBB"]
-      ni <- which(data.all$forestdamagequalifier==damID)
-      nsDam <- round(nSegs/3)
-      if(length(ni) > nsDam) ni <- ni[sample(1:length(ni), nsDam, replace = F)]
-      sampleTraining <- data.all[ni,]
-      # Sample from outside damaged segments
-      ns <- nSegs - length(ni)
-      ni <- which(!(data.all$forestdamagequalifier%in%c(damID)))
-      ni <- ni[sample(1:length(ni),ns, replace = F)]
-      sampleTraining <- rbind(sampleTraining, data.all[ni,])
-      rm("data.all")
+    if(climScen==0){
+      # training set from the rest of segments: 
+      data.all <- data.all[setdiff(1:nrow(data.all),ni),]
+      rm("ni"); gc()
       gc()
-    } else {
-      print("No weighting on training set.")
-      ni <- sample(1:nrow(data.all), nSegs, replace=F)
-      sampleTraining <- data.all[ni,]
-      rm("data.all")
-      gc()
+      
+      weightedTraining <- weighted
+      print(paste("weighted Training =",weighted))
+      if(weightedTraining){
+        # damaged segments, max nSegs/3 rows
+        damID <- dam_indexs[dam_names=="SBB"]
+        ni <- which(data.all$forestdamagequalifier==damID)
+        nsDam <- round(nSegs/3)
+        if(length(ni) > nsDam) ni <- ni[sample(1:length(ni), nsDam, replace = F)]
+        sampleTraining <- data.all[ni,]
+        # Sample from outside damaged segments
+        ns <- nSegs - length(ni)
+        ni <- which(!(data.all$forestdamagequalifier%in%c(damID)))
+        ni <- ni[sample(1:length(ni),ns, replace = F)]
+        sampleTraining <- rbind(sampleTraining, data.all[ni,])
+        rm("data.all")
+        gc()
+      } else {
+        print("No weighting on training set.")
+        ni <- sample(1:nrow(data.all), nSegs, replace=F)
+        sampleTraining <- data.all[ni,]
+        rm("data.all")
+        gc()
+      }
     }
   }
   #####
@@ -419,6 +435,10 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T, c
       source("~/disturbance_modules/0.5_functions_updated.R", local=T)
       
       timeT <- Sys.time()
+      #ii <- 1
+      #dataS[ii,c("x","y")]
+      #neighborsAll(ii,dataS = dataS,declData = declDataor,dataSS = dataSS,clctDist = dlim,
+      #            KUVA=T)[1:3]
       outputNeighbor <- apply(data.table(c(1:nSegs)),1,neighborsAll,
                               dataS=dataS,
                               declData=declDataor, dataSS = dataSS,
@@ -928,7 +948,7 @@ if(!exists("weighted")) weighted <- F
 
 calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=F,
                                 outputs = outputs, climScen=0, disturbanceON=NA,
-                                newSamples=T){
+                                newSamples=T, usePreviousIDs = F){
   print(paste("Run climScen",climScen))
   climScen0 <- climScen
   if(weighted) set.seed(10) # for training and testing, keep the samples same
@@ -938,7 +958,9 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
   print(paste("Region", r_no,"sample"))
   if(newSamples){
     print("Generate new sample")
-    sample <- calculateOPSdata(r_noi,nSegs = nSegs, neighborIDs = neighborIDs, weighted = weighted,climScen = climScen)
+    sample <- calculateOPSdata(r_noi,nSegs = nSegs, neighborIDs = neighborIDs, 
+                               weighted = weighted,climScen = climScen, 
+                               usePreviousIDs = usePreviousIDs) 
   } else {
     print("Load sample")
     load(paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/MKIdata/samples_train_valid_",r_noi,".rdata"))
@@ -1392,7 +1414,8 @@ if(!sbatches){
     #     print(paste0("region list: ",which(rids==20),"/",length(rids)))
     calculateStatistics(jx, fmi_from_allas = fmi_from_allas, neighborIDs=neighborIDs,
                         weighted = weighted, climScen = climScen, 
-                        disturbanceON = disturbanceON0, newSamples = newSamples)
+                        disturbanceON = disturbanceON0, newSamples = newSamples,
+                        usePreviousIDs = usePreviousIDs)
   })      
 } else {
   library(parallel)
@@ -1401,7 +1424,8 @@ if(!sbatches){
     #     print(paste0("region list: ",which(rids==20),"/",length(rids)))
     calculateStatistics(jx, fmi_from_allas = fmi_from_allas, neighborIDs=neighborIDs,
                         weighted = weighted, climScen = climScen, 
-                        disturbanceON = disturbanceON0, newSamples = newSamples)
+                        disturbanceON = disturbanceON0, newSamples = newSamples,
+                        usePreviousIDs = usePreviousIDs)
   }, mc.cores = 5,mc.silent=FALSE)      
 }
 
