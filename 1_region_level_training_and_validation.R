@@ -238,6 +238,9 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
       
       #data.table(do.call(rbind, df))
       #XYdamages <- XYdamages_new
+      fname <- paste0("DeclaredDamages_",dam_names[inds],"_rno",r_no,"_",regnames[r_noi],"_cleaned.rdata")
+      save(XYdamages,file=paste0(savepath,"/",fname))
+      print(paste("File",fname,"saved"))
       
       
     }
