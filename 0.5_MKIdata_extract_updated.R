@@ -58,9 +58,9 @@ library(sp)
 DeclToRaster <- T # T if update the declaration database
 #if(DeclToRaster) dam_years <- 2015:2024
 
-r_noi <- 5
+r_noi <- 1
 #disturbance_extract <- function(r_noi){
-for(r_noi in 5:6){#1:length(regs)){
+for(r_noi in 1:length(regs)){
   r_no <- rnos[regs[r_noi]]
   toMem <- ls()
   print(paste("region",r_no))
@@ -124,9 +124,11 @@ for(r_noi in 5:6){#1:length(regs)){
     #CSCrun<-T
     load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/data.all_maakunta_",r_no,".rdata"))
     data.all$segID <- data.all$maakuntaID
+    segID <- data.all$segID[1]
     data.all <- data.all[segID!=0,c("segID")]#,"age","ba","pine","spruce","birch")]
     setkey(data.all,segID)
     gc()
+    
     
     setwd("/scratch/project_2000994/PREBASruns/PREBAStesting/")
     load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
@@ -144,6 +146,24 @@ for(r_noi in 5:6){#1:length(regs)){
     bbox<-st_bbox(tmp)
     tabX<-tabX[(tabX$x>=bbox[1] & tabX$x<=bbox[3] & tabX$y>=bbox[2] &tabX$y <=bbox[4]),]
     gc()
+    FIG <- F
+    if(FIG){
+      ij <- ids[102]
+      cnt <- NA
+      for(ij in ids[1:100]){
+      xys <- tabX[segID==ij,c("x","y")]
+      if(length(xys$x)>0){ 
+        xm <- range(xys$x)
+        ym <- range(xys$y)
+        ni <- length(xys$x)
+        plot(xys$x,xys$y, asp=1, main=ij)
+        x2 <- (matrix(xys$x,ni,ni)-matrix(xys$x,ni,ni,byrow = T))^2
+        y2 <- (matrix(xys$y,ni,ni)-matrix(xys$y,ni,ni,byrow = T))^2
+        #apply(sqrt(x2+y2)+diag(1e12,ni,ni),1,min)
+        if(ni > 1 & any(apply(sqrt(x2+y2)+diag(1e12,ni,ni),1,min) > sqrt((2*16^2))+1e-3)) cnt <- c(cnt,ij)
+      }
+      }
+    }
     pts <- vect(cbind(tabX$x,tabX$y),crs = crsX)
     values(pts) <- data.table(segID=tabX$segID, id=1:nrow(tabX),x=tabX$x,y=tabX$y)
     #values(pts) <- tabX

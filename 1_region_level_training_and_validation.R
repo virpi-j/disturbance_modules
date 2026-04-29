@@ -117,6 +117,130 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
       XYdamages[,damSegID := match(paste(XYdamages$dam_id,XYdamages$segID),
                                    paste(IDsUniq$dam_id,IDsUniq$segID))]
     }
+    if(TRUE){
+      # Clean weird segments off!
+      load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
+      data.IDs$segID <- data.IDs$maakuntaID
+      data.IDSor <- data.IDs <- data.IDs[segID!=0]
+      data.IDs <- data.IDs[which(data.IDs$segID%in%data.all$segID),]
+      nrow(data.IDs)
+      data.IDs <- data.IDs[which(data.IDs$segID%in%XYdamages$segID),]
+      nrow(data.IDs)
+      
+      FIGU <- F
+      if(FIGU){
+        dev.off()
+        par(mfrow=c(2,2))
+      }
+      #XYdamages_new <- data.frame()
+      ids <- unique(XYdamages$segID)
+      #for(ij in 1:length(ids)){
+      t0 <- Sys.time()
+      clean_decl <- function(ij,FIGU=F){
+        #t0 <- Sys.time()
+        if(ij%%1000==0) print(paste("clean declarations, ij =",
+                                    ij,"/",length(ids),"t =",Sys.time()-t0))
+        if(any(data.IDs$segID%in%ids[ij])){ # segment in declarations
+          ndatai <- which(data.IDs$segID==ids[ij])
+          ndecli <- which(XYdamages$segID==ids[ij])
+          if(length(ndatai)==length(ndecli)){
+            ni <- 0
+          } else {
+            if(FIGU){
+              plot(data.IDs$x[ndatai],data.IDs$y[ndatai],main=ij)
+              points(XYdamages$x[ndecli],XYdamages$y[ndecli],col="red",pch=5+ii)
+            }
+            nis <- which(!paste(data.IDs$x[ndatai],data.IDs$y[ndatai])%in%
+                           paste(XYdamages$x[ndecli],XYdamages$y[ndecli]))
+            if(FIGU) points(data.IDs$x[ndatai[nis]],data.IDs$y[ndatai[nis]],col="blue",pch=2)
+            ni <- length(nis)
+          }
+          if(ni==0){ # all segments to damages
+            XYdamages_tmp <- XYdamages[ndecli,]
+          }else if(ni>0 & ni/length(ndatai)<0.8){
+            if(FIGU){ 
+              plot(data.IDs$x[ndatai],data.IDs$y[ndatai],main=ij)
+              points(XYdamages$x[ndecli],XYdamages$y[ndecli],col="red",pch=5+ii)
+            }
+            # if more than 20% of pixels are declared, set all declared
+            xydata_tmp <- data.IDs[ndatai,c("x","y")]
+            xydata <- xydata_tmp[nis,]
+            XYdamages_tmp <- XYdamages[ndecli,]            
+            damids <- unique(XYdamages$dam_id[ndecli])
+            ii <- 1
+            itr <- 0
+            removeLines <- F
+            while(ni>0){
+              #ii <- sample(1:length(damids),1)
+              ni0 <- ni
+              for(ii in 1:length(damids)){
+                ndeclii <- which(XYdamages_tmp$dam_id==damids[ii])
+                if(FIGU) points(XYdamages_tmp$x[ndeclii],XYdamages_tmp$y[ndeclii],col="red",pch=5+ii)
+                if(ni>0){
+                  iks <- 0
+                  ik <- 1
+                  for(ik in 1:ni){
+                    if(min(sqrt((xydata$x[ik]-XYdamages_tmp$x[ndeclii])^2+
+                                (xydata$y[ik]-XYdamages_tmp$y[ndeclii])^2))<
+                       (sqrt(2*16^2)+1e-3)){
+                      tmp <- XYdamages_tmp[ndeclii[1],]
+                      tmp$x <- xydata$x[ik]
+                      tmp$y <- xydata$y[ik]
+                      XYdamages_tmp <- rbind(XYdamages_tmp, tmp)
+                      iks <- c(iks,ik)
+                    }
+                  }
+                  if(FIGU & length(ik)>1){
+                    points(XYdamages_tmp$x,XYdamages_tmp$y,col="green",pch=5+ii)
+                    points(xydata$x[iks[-1]],xydata$y[iks[-1]],col="green",pch=5+ii, cex=2)
+                  }
+                  nis <- setdiff(nis,nis[iks[-1]])
+                  #xydata <- data.IDs[ndatai[nis],c("x","y")]
+                  xydata <- xydata_tmp[nis,]
+                  
+                  if(FIGU) points(data.IDs$x[ndatai[nis]],data.IDs$y[ndatai[nis]],col="blue",pch=21,cex=2)
+                  ni <- length(nis)
+                }
+              }
+              if(FIGU) points(XYdamages_tmp$x,XYdamages_tmp$y,col="red",pch=20)
+              #
+              #print(ni0-ni)
+              itr <- itr + 1
+              if((ni0-ni == 0 & ni > 0) | itr > length(damids)*50){
+                #data_all_new <- data.all[segID!=ids[ij],]
+                removeLines <- T
+                break()
+              }
+            }
+            #if(!removeLines) XYdamages_new <- rbind(XYdamages_new,
+            #                                        XYdamages_tmp)
+            if(removeLines) XYdamages_tmp <- NA
+          } else {
+            #ndecli <- NA
+            if(FIGU){
+              plot(data.IDs$x[ndatai],data.IDs$y[ndatai],main=ij)
+              #  points(XYdamages$x[ndecli],XYdamages$y[ndecli],col="red",pch=5+ii)
+            }
+            #nis <- which(!paste(data.IDs$x[ndatai],data.IDs$y[ndatai])%in%
+            #               paste(XYdamages$x[ndecli],XYdamages$y[ndecli]))
+            #xydata <- data.IDs[ndatai[nis],c("x","y")]
+            if(FIGU) points(data.IDs$x[ndatai],data.IDs$y[ndatai],col="blue",pch=2)
+            
+          } 
+        }
+        #print(paste(ij,Sys.time()-t0))
+        return(XYdamages_tmp)
+      }  
+      
+      XYdamages <- data.table(do.call(rbind, 
+                                      apply(array(1:length(ids),
+                                                  c(length(ids),1)),1,clean_decl)))
+      
+      #data.table(do.call(rbind, df))
+      #XYdamages <- XYdamages_new
+      
+      
+    }
     if(climScen==0){
       # Remove segments with SegIDs from XYdamages, that are not in data.all
       nii<- match(XYdamages$segID,data.all$segID)
@@ -132,7 +256,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
                          data.all[match(XYdamages$segID,data.all$segID),..njj1])
       njj <- setdiff(colnames(XYdamages),vars_to_prebas)
       XYdamages <- cbind(XYdamages[,..vars_to_prebas],XYdamages[,..njj])
-    
+      
       #nii <- data.all[nii,..varsInDataall]
       #varsInDataall <- which(colnames(XYdamages)%in%vars_to_prebas)
       #XYdamages[,varsInDataall] <- nii
