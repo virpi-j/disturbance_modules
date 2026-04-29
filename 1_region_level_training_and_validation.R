@@ -132,111 +132,142 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
         dev.off()
         par(mfrow=c(2,2))
       }
-      #XYdamages_new <- data.frame()
+      # unique coordinates, take the newest declaration years
+      data.IDs[,coordi:=paste0(data.IDs$x,data.IDs$y)]
+      XYdamages_or <- XYdamages[,coordi:=paste0(XYdamages$x,XYdamages$y)]
+      XYdamages <- XYdamages[XYdamages[,.I[which.max(dam_year)],by=coordi]$V1,]
+      
       ids <- unique(XYdamages$segID)
       #for(ij in 1:length(ids)){
       t0 <- Sys.time()
       print(paste("no of segments in declarations",length(ids)))
-      clean_decl <- function(ij,FIGU=F){
-        #t0 <- Sys.time()
-        if(ij%%10000==0) print(paste("clean declarations, ij =",
+      clean_decl <- function(ij,FIGU=F,printTime=F){
+        if(printTime) t0 <- Sys.time()
+        if(ij%%1000==0) print(paste("clean declarations, ij =",
                                     ij,"/",length(ids),"t =",Sys.time()-t0))
         if(any(data.IDs$segID%in%ids[ij])){ # segment in declarations
-          ndatai <- which(data.IDs$segID==ids[ij])
-          ndecli <- which(XYdamages$segID==ids[ij])
-          if(length(ndatai)==length(ndecli)){
+          #ndatai <- 
+          xydata_tmp <- data.IDs[which(data.IDs$segID==ids[ij]),c("x","y","coordi")]
+          XYdamages_tmp <- XYdamages[which(XYdamages$segID==ids[ij]),]
+          #ndecli <- which(XYdamages$segID==ids[ij])
+          if(FIGU){
+            plot(c(xydata_tmp$x,XYdamages_tmp$x),
+                 c(xydata_tmp$y,XYdamages_tmp$y),main=ij)
+            points(XYdamages_tmp$x,XYdamages_tmp$y,col="red")
+          }
+          #nis <- which(!paste(data.IDs$x[ndatai],data.IDs$y[ndatai])%in%
+          #               paste(XYdamages$x[ndecli],XYdamages$y[ndecli]))
+          if(nrow(xydata_tmp)==nrow(XYdamages_tmp)){
             ni <- 0
           } else {
-            if(FIGU){
-              plot(data.IDs$x[ndatai],data.IDs$y[ndatai],main=ij)
-              points(XYdamages$x[ndecli],XYdamages$y[ndecli],col="red",pch=5+ii)
-            }
-            nis <- which(!paste(data.IDs$x[ndatai],data.IDs$y[ndatai])%in%
-                           paste(XYdamages$x[ndecli],XYdamages$y[ndecli]))
-            if(FIGU) points(data.IDs$x[ndatai[nis]],data.IDs$y[ndatai[nis]],col="blue",pch=2)
+            nis <- which(!xydata_tmp$coordi%in%
+                           XYdamages_tmp$coordi)
+            if(FIGU) points(xydata_tmp$x[nis],xydata_tmp$y[nis],col="blue",pch=2)
             ni <- length(nis)
           }
           if(ni==0){ # all segments to damages
-            XYdamages_tmp <- XYdamages[ndecli,]
+            #XYdamages_tmp <- XYdamages_tmp
           }else if(ni>0 & ni/length(ndatai)<0.8){
+            #XYdamages_tmp <- XYdamages_tmp
+            xydata <- xydata_tmp[nis,]
             if(FIGU){ 
-              plot(data.IDs$x[ndatai],data.IDs$y[ndatai],main=ij)
-              points(XYdamages$x[ndecli],XYdamages$y[ndecli],col="red",pch=5+ii)
+              plot(xydata_tmp$x,xydata_tmp$y,main=ij)
+              points(XYdamages_tmp$x,XYdamages_tmp$y,col="red",pch=4)
+              points(xydata$x,xydata$y,col="blue",pch=20)
             }
             # if more than 20% of pixels are declared, set all declared
-            xydata_tmp <- data.IDs[ndatai,c("x","y")]
-            xydata <- xydata_tmp[nis,]
-            XYdamages_tmp <- XYdamages[ndecli,]            
-            damids <- unique(XYdamages$dam_id[ndecli])
-            ii <- 1
-            itr <- 0
-            removeLines <- F
-            while(ni>0){
-              #ii <- sample(1:length(damids),1)
-              ni0 <- ni
+            damids <- unique(XYdamages_tmp$dam_id)
+            #ii <- 1
+            #itr <- 0
+            #removeLines <- F
+            
+            dx2 <- (matrix(xydata$x,nrow = ni,ncol=nrow(XYdamages_tmp))-
+            matrix(XYdamages_tmp$x,nrow = ni,ncol=nrow(XYdamages_tmp),byrow = T))^2
+            dy2 <- (matrix(xydata$y,nrow = ni,ncol=nrow(XYdamages_tmp))-
+                      matrix(XYdamages_tmp$y,nrow = ni,ncol=nrow(XYdamages_tmp),byrow = T))^2
+            tmp <- XYdamages_tmp[apply(sqrt(dx2+dy2),1,which.min),]
+            tmp$x <- xydata$x
+            tmp$y <- xydata$y
+            XYdamages_tmp <- rbind(XYdamages_tmp,tmp)
+            if(FIGU){
+              #points(XYdamages$x[ndecli],XYdamages$y[ndecli],col="red",pch=5)
               for(ii in 1:length(damids)){
+                plot(xydata_tmp$x,xydata_tmp$y,main=ij)
                 ndeclii <- which(XYdamages_tmp$dam_id==damids[ii])
-                if(FIGU) points(XYdamages_tmp$x[ndeclii],XYdamages_tmp$y[ndeclii],col="red",pch=5+ii)
-                if(ni>0){
-                  iks <- 0
-                  ik <- 1
-                  for(ik in 1:ni){
-                    if(min(sqrt((xydata$x[ik]-XYdamages_tmp$x[ndeclii])^2+
-                                (xydata$y[ik]-XYdamages_tmp$y[ndeclii])^2))<
-                       (sqrt(2*16^2)+1e-3)){
-                      tmp <- XYdamages_tmp[ndeclii[1],]
-                      tmp$x <- xydata$x[ik]
-                      tmp$y <- xydata$y[ik]
-                      XYdamages_tmp <- rbind(XYdamages_tmp, tmp)
-                      iks <- c(iks,ik)
+                points(XYdamages_tmp$x[ndeclii],XYdamages_tmp$y[ndeclii],col="green",pch=5+ii)
+              }  
+            }
+            
+            if(FALSE){
+              while(ni>0){
+                #ii <- sample(1:length(damids),1)
+                ni0 <- ni
+                for(ii in 1:length(damids)){
+                  ndeclii <- which(XYdamages_tmp$dam_id==damids[ii])
+                  if(FIGU) points(XYdamages_tmp$x[ndeclii],XYdamages_tmp$y[ndeclii],col="red",pch=5+ii)
+                  if(ni>0){
+                    iks <- 0
+                    ik <- 1
+                    for(ik in 1:ni){
+                      if(min(sqrt((xydata$x[ik]-XYdamages_tmp$x[ndeclii])^2+
+                                  (xydata$y[ik]-XYdamages_tmp$y[ndeclii])^2))<
+                         (sqrt(2*16^2)+1e-3)){
+                        tmp <- XYdamages_tmp[ndeclii[1],]
+                        tmp$x <- xydata$x[ik]
+                        tmp$y <- xydata$y[ik]
+                        XYdamages_tmp <- rbind(XYdamages_tmp, tmp)
+                        iks <- c(iks,ik)
+                      }
                     }
+                    if(FIGU & length(ik)>1){
+                      points(XYdamages_tmp$x,XYdamages_tmp$y,col="green",pch=5+ii)
+                      points(xydata$x[iks[-1]],xydata$y[iks[-1]],col="green",pch=5+ii, cex=2)
+                    }
+                    nis <- setdiff(nis,nis[iks[-1]])
+                    #xydata <- data.IDs[ndatai[nis],c("x","y")]
+                    xydata <- xydata_tmp[nis,]
+                    
+                    if(FIGU) points(data.IDs$x[ndatai[nis]],data.IDs$y[ndatai[nis]],col="blue",pch=21,cex=2)
+                    ni <- length(nis)
                   }
-                  if(FIGU & length(ik)>1){
-                    points(XYdamages_tmp$x,XYdamages_tmp$y,col="green",pch=5+ii)
-                    points(xydata$x[iks[-1]],xydata$y[iks[-1]],col="green",pch=5+ii, cex=2)
-                  }
-                  nis <- setdiff(nis,nis[iks[-1]])
-                  #xydata <- data.IDs[ndatai[nis],c("x","y")]
-                  xydata <- xydata_tmp[nis,]
-                  
-                  if(FIGU) points(data.IDs$x[ndatai[nis]],data.IDs$y[ndatai[nis]],col="blue",pch=21,cex=2)
-                  ni <- length(nis)
+                }
+                if(FIGU) points(XYdamages_tmp$x,XYdamages_tmp$y,col="red",pch=20)
+                #
+                #print(ni0-ni)
+                itr <- itr + 1
+                if((ni0-ni == 0 & ni > 0) | itr > length(damids)*50){
+                  #data_all_new <- data.all[segID!=ids[ij],]
+                  removeLines <- T
+                  break()
                 }
               }
-              if(FIGU) points(XYdamages_tmp$x,XYdamages_tmp$y,col="red",pch=20)
-              #
-              #print(ni0-ni)
-              itr <- itr + 1
-              if((ni0-ni == 0 & ni > 0) | itr > length(damids)*50){
-                #data_all_new <- data.all[segID!=ids[ij],]
-                removeLines <- T
-                break()
-              }
+              #if(!removeLines) XYdamages_new <- rbind(XYdamages_new,
+              #                                        XYdamages_tmp)
+              if(removeLines) XYdamages_tmp <- NA
             }
-            #if(!removeLines) XYdamages_new <- rbind(XYdamages_new,
-            #                                        XYdamages_tmp)
-            if(removeLines) XYdamages_tmp <- NA
           } else {
             #ndecli <- NA
             if(FIGU){
-              plot(data.IDs$x[ndatai],data.IDs$y[ndatai],main=ij)
+              plot(xydata_tmp$x,xydata_tmp$y,main=ij)
               #  points(XYdamages$x[ndecli],XYdamages$y[ndecli],col="red",pch=5+ii)
             }
             #nis <- which(!paste(data.IDs$x[ndatai],data.IDs$y[ndatai])%in%
             #               paste(XYdamages$x[ndecli],XYdamages$y[ndecli]))
             #xydata <- data.IDs[ndatai[nis],c("x","y")]
-            if(FIGU) points(data.IDs$x[ndatai],data.IDs$y[ndatai],col="blue",pch=2)
+            if(FIGU) points(xydata_tmp$x,xydata_tmp$y,col="blue",pch=2)
             XYdamages_tmp <- NA
           } 
+        } else { 
+          XYdamages_tmp <- NA
         }
-        #print(paste(ij,Sys.time()-t0))
+        if(printTime) print(paste(ij,Sys.time()-t0))
         return(XYdamages_tmp)
       }  
       
       XYdamages <- data.table(do.call(rbind, 
                                       apply(array(1:length(ids),
                                                   c(length(ids),1)),1,clean_decl)))
-      
+      gc()
       #data.table(do.call(rbind, df))
       #XYdamages <- XYdamages_new
       fname <- paste0("DeclaredDamages_",dam_names[inds],"_rno",r_no,"_",regnames[r_noi],"_cleaned.rdata")
