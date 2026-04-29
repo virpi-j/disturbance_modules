@@ -136,6 +136,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
       ids <- unique(XYdamages$segID)
       #for(ij in 1:length(ids)){
       t0 <- Sys.time()
+      print(paste("no of segments in declarations",length(ids)))
       clean_decl <- function(ij,FIGU=F){
         #t0 <- Sys.time()
         if(ij%%10000==0) print(paste("clean declarations, ij =",
