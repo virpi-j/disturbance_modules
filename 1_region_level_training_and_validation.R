@@ -225,7 +225,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
             #               paste(XYdamages$x[ndecli],XYdamages$y[ndecli]))
             #xydata <- data.IDs[ndatai[nis],c("x","y")]
             if(FIGU) points(data.IDs$x[ndatai],data.IDs$y[ndatai],col="blue",pch=2)
-            
+            XYdamages_tmp <- NA
           } 
         }
         #print(paste(ij,Sys.time()-t0))
