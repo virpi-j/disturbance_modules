@@ -167,7 +167,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
           }
           if(ni==0){ # all segments to damages
             #XYdamages_tmp <- XYdamages_tmp
-          }else if(ni>0 & ni/length(ndatai)<0.8){
+          }else if(ni>0 & ni/nrow(xydata_tmp)<0.8){
             #XYdamages_tmp <- XYdamages_tmp
             xydata <- xydata_tmp[nis,]
             if(FIGU){ 
