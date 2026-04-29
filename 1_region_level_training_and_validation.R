@@ -138,7 +138,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
       t0 <- Sys.time()
       clean_decl <- function(ij,FIGU=F){
         #t0 <- Sys.time()
-        if(ij%%1000==0) print(paste("clean declarations, ij =",
+        if(ij%%10000==0) print(paste("clean declarations, ij =",
                                     ij,"/",length(ids),"t =",Sys.time()-t0))
         if(any(data.IDs$segID%in%ids[ij])){ # segment in declarations
           ndatai <- which(data.IDs$segID==ids[ij])
