@@ -34,7 +34,7 @@ neighborsAll <- function(ij, dataS, declData, dataSS, clctDist = 150, KUVA = F){
   dclct <- dclct_south <- dSBB <- dWind <- c(1e12,NA,0)
   if(length(ntmpi)>0){
     declData <- declData[ntmpi,]
-    gc()
+    #gc()
     if(KUVA){
       xm <- mean(xi)
       ym <- mean(yi)

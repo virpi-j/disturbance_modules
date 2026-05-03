@@ -610,7 +610,8 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
       outputNeighbor <- data.table(t(outputNeighbor))
       colnames(outputNeighbor) <- dimNams
       outputNeighbor[outputNeighbor==1e12] <- NA
-      print(outputNeighbor)
+      #print(outputNeighbor)
+      hist(outputNeighbor$minDist,40)
       #rm(list=c("xx","yy","dx"))
       gc()
       if(ik==1){
