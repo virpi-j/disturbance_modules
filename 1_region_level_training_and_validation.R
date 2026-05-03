@@ -86,7 +86,6 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
   
   print(paste("region",r_no))
   print(paste("Neighbor information =",neighborIDs))
-  
   # PREBAS run for a sample
   landClassX <- 1:2
   #    devtools::source_url("https://raw.githubusercontent.com/ForModLabUHel/IBCcarbon_runs/master/finRuns/Rsrc/settings.r")
@@ -109,7 +108,10 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
       # remove if species is na
       XYdamages <- XYdamages[which(!is.na(XYdamages$pine)),]
       gc()
-      
+      # if same coordinates in multiple decl, choose the newest
+      XYdamages[,coordi:=paste0(XYdamages$x,XYdamages$y)]
+      XYdamages <- XYdamages[XYdamages[,.I[which.max(dam_year)],by=coordi]$V1,]
+      XYdamages <- XYdamages[,1:21]
       IDsUniq <- unique(XYdamages[,c("dam_id","segID")])
       IDsUniq[,damSegID:=1:nrow(IDsUniq)]
       
@@ -117,7 +119,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
       XYdamages[,damSegID := match(paste(XYdamages$dam_id,XYdamages$segID),
                                    paste(IDsUniq$dam_id,IDsUniq$segID))]
     }
-    if(TRUE){
+    if(FALSE){
       # Clean weird segments off!
       load(paste0("/scratch/project_2000994/PREBASruns/finRuns/input/maakunta/maakunta_",r_no,"_IDsTab.rdata"))
       data.IDs$segID <- data.IDs$maakuntaID
@@ -325,11 +327,11 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
       data.all$area <- apply(df[,c(2,4)],1,min)
       rm(list=c("df","data.IDs")); gc()    
       ni <- which(data.all$segID%in%XYdam_uniqueSegm$segID)
-      areas <- XYdam_uniqueSegm[,sum(area),by = list(segID)] # segID area, split to damsegIDs 
-      
-        
-      ni <- ni[which(data.all$area[ni]-
-                       areas[match(data.all$segID[ni],areas$segID),"V1"]<=3*0.16^2)]
+      if(FALSE){
+        areas <- XYdam_uniqueSegm[,sum(area),by = list(segID)] # segID area, split to damsegIDs 
+        ni <- ni[which(data.all$area[ni]-
+                         areas[match(data.all$segID[ni],areas$segID),"V1"]<=3*0.16^2)]
+      }
       data.all <- data.all[setdiff(1:nrow(data.all),ni),]
       rm("areas"); gc()    
       
