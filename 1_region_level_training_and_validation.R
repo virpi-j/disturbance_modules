@@ -636,11 +636,11 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
     samples <- list(sampleValidation, areatot, vars_to_prebas)
     names(samples) <- c("sampleValidation","areatot","vars_to_prebas")
   } 
-  if(weighted){
+  #if(weighted){
     save(samples, damInfo, 
          file=paste0("/scratch/project_2000994/PREBASruns/PREBAStesting/MKIdata/samples_train_valid_",r_noi,".rdata"))
     print("sample data saved.")
-  }
+  #}
   return(samples)
   rm(list=setdiff(ls(),toMem))
   gc()
