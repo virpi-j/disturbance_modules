@@ -259,3 +259,134 @@ neighborsAll <- function(ij, dataS, declData, dataSS, clctDist = 150, KUVA = F){
   return(out)
 }
 
+
+neighbors_data.all <- function(ij, data.all = sampleS,#data.IDs, data.all, 
+                               clctDist = 1000, KUVA = F){
+  if(KUVA) print(paste0("rno",r_no,": id ",ij))
+  # print(paste0("rno",r_noi,": id ",ij))
+  sysT <- Sys.time()
+  if(!exists("clctDist")) clctDist <- 150
+  if(ij==1) print(paste("clctDist =",clctDist))
+  if((ij)%%min(1000,round(nSegs/4))==0){
+    timeT2 <- Sys.time()
+    tperiter<- timeT2-timeT
+    print(paste0("neighborinfo rno",r_no,": ",ij,"/",nSegs,
+                 ", time ",round(tperiter,2)))
+  }
+  segIDij <- data.all$segID[ij]
+  # forestdamagequalifier in declarations: a number or NA, in sample 0
+  iks <- which(data.IDs$segID==segIDij)
+  xi <- data.IDs$x[iks]
+  yi <- data.IDs$y[iks]
+  if(length(iks)==0) print(paste("error",ij))
+  # select pixels within the given range from the segment i
+  
+  ntmpi <- which(data.IDs$y<=(max(yi)+clctDist) & 
+                   data.IDs$y >= (min(yi)-clctDist) & 
+                   data.IDs$x <= (max(xi)+clctDist) & 
+                   data.IDs$x >= (min(xi)-clctDist))
+  # Remove pixels from the segment ij
+  if(length(ntmpi)>0) ntmpi <- ntmpi[which(data.IDs$segID[ntmpi]!=segIDij)]
+
+  n_neigh <- length(ntmpi)
+  #gc()
+  #print(n_neigh)
+  dclct <- NA
+  if(length(ntmpi)>0){
+    declData <- data.IDs[ntmpi,]
+    # Which segments from data.all in neighborhood & clct status
+    segInfo <- data.all[which(data.all$segID%in%unique(data.IDs$segID[ntmpi])),c("segID","clct_state")]
+    declData <- declData[which(declData$segID%in%segInfo$segID),]
+    declData[,damCCutInt:=segInfo[match(declData$segID,segInfo$segID),clct_state]]    
+    #gc()
+    if(KUVA){
+      xm <- mean(xi)
+      ym <- mean(yi)
+      par(mfrow=c(2,2))
+      plot(c(declData$x,xi)-xm,c(declData$y,yi)-ym, 
+           xlab="x",ylab="y",asp=1,col="black")
+      points(declData$x[which(declData$damCCutInt==1)]-xm,
+             declData$y[which(declData$damCCutInt==1)]-ym,col="blue",pch=19)
+      points(xi-xm,yi-ym,pch=19,col="green",cex=2)
+    }
+    n_neigh <- nrow(declData)
+    ijsd <- NULL  
+    distances <- 1e12
+    if(KUVA) print(any(declData$damCCutInt>0))
+    #}
+    
+    if(any(declData$damCCutInt>0)){
+      if(n_neigh>0){
+        declData <- declData[which(declData$damCCutInt>0),]
+        n_neigh <- nrow(declData)
+        # rows for all neighbors, cols for all pixels in segm
+        distances <- array(0,c(n_neigh,length(xi)),
+                           dimnames = list(paste0("neighpix_id",1:n_neigh),
+                                           paste0("segment_i_id",1:length(xi))))
+        for(ijx in 1:length(xi)){
+          distances[,ijx] <- rowSums(cbind(declData$x-xi[ijx],
+                                           declData$y-yi[ijx])**2)
+        }
+        distances[distances==0] <- 1e12 # not in the segment ij
+      }
+      ijsd <- NULL
+      # choose all the cells close enough and from the suitable time period
+      if(min(distances)<= clctDist**2){ ## any cells near enough
+        mins <- apply(distances,2,min) # for each segm.pixel, min dist to neighbor
+        if(min(mins)<= clctDist**2){
+          ijsd <- which(apply(distances,1,min)<clctDist**2) # which decl data is closest
+        }
+        declData <- declData[ijsd,]
+        #gc()
+        distances <- distances[ijsd,]
+        n_neigh <- length(ijsd)
+        #gc()
+        if(KUVA & n_neigh>0){
+          points(declData$x-xm,declData$y-ym,pch=19,col="red")
+        }
+      }
+      ijs <- NULL
+      
+      # decl segments close enough
+      if(length(ijsd)>0){ 
+        
+        # clearcuts
+        ntmp <- array(rep(declData$damCCutInt,length(xi)), dim=c(n_neigh,length(xi)))*distances
+        # closest neigh with cc for each pixel in segm0
+        if(n_neigh>1 & length(xi)>1){ # more than one neigh and more than one segm pixel
+          mins <- apply(ntmp,2,min)
+        } else {
+          mins <- ntmp 
+        }
+        nclct <- length(which(mins<(16^2+16^2))) # how many segm pixels right next to clct pixel
+        if(min(mins)<= clctDist**2){
+          # find the closest, recent clct pixel 
+          if(length(xi)>1 & n_neigh>1){
+            ijs <- unique(apply(ntmp,2,which.min)[which(mins==min(mins))])
+          } else if(length(xi)==1) {
+            ijs <- which(mins==min(mins))
+          } else {
+            ijs <- 1 
+          }
+          dd <- sqrt(min(ntmp[ijs,])) 
+          dclct <- c(dd)
+          #if(dd>0){
+          #  print(ij)
+          #  eaeta <- eaatg
+          #}
+          if(KUVA){
+            plot(c(declData$x,xi)-xm,c(declData$y,yi)-ym,
+                 xlab="x",ylab="y",asp=1,col="black", 
+                 main=paste0("neigh clct",ij," d=",round(dd,2),", n=",nclct))
+            points(declData$x[which(declData$damCCutInt==1)]-xm,
+                   declData$y[which(declData$damCCutInt==1)]-ym,col="blue",pch=19)
+            points(xi-xm,yi-ym,pch=19,col="green",cex=2)
+            points(declData$x[ijs]-xm,declData$y[ijs]-ym,col="red",pch=4,cex=2)
+          }
+        }
+      }      
+    }
+  }
+  out <- c(dclct)
+  return(out)
+}

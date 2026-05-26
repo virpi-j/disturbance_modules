@@ -1252,7 +1252,11 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
         clcuts <<- 1
         disturbanceON <- NA
         if(setid==2) disturbanceON <- disturbanceON0 # "bb" # c("fire","wind","bb")
-        if(!exists(harvScen0)) harvScen0<-"NoHarv"; harvInten0 <- "NoHarv"
+        if(!exists("harvScen0")) {
+          harvScen0<-"NoHarv" 
+          harvInten0 <- "NoHarv"
+          print("Scenario setting given as NoHarv")
+        }
         source("~/finruns_to_update/functions.R", local=T)
         toMem2 <- ls()
         sampleXs <-   runModel(1,sampleID=1, outType = outType, 
