@@ -1403,14 +1403,14 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
         print(paste0("saved file validation_stats_rno",r_noi,"_",names(sample)[setid],".rdata"))
         
         
-        #if(setid==1){ 
-        nams <- c("training","validation")
-        toMem2 <- ls()
-        outputs <- trainingSetCreation(r_noi, sampleXs, dataS, neighborIDs = neighborIDs,
-                                       startingYear = startingYear, endingYear= endingYear,
-                                       TestaaSBBkoodi=F,nams[setid])
-        rm(list=setdiff(ls(),c(toMem2)))
-        #}
+        if(!onlyValidationset){ 
+          nams <- c("training","validation")
+          toMem2 <- ls()
+          outputs <- trainingSetCreation(r_noi, sampleXs, dataS, neighborIDs = neighborIDs,
+                                         startingYear = startingYear, endingYear= endingYear,
+                                         TestaaSBBkoodi=F,nams[setid])
+          rm(list=setdiff(ls(),c(toMem2)))
+        }
         
       } else if(climScen>0){
         print("Run scenarios.")
