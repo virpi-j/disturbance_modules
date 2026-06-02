@@ -1345,14 +1345,12 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
                                      areabb,areabbHarv,yearsSamplebb)
         }
         years <- years[years>2018 & years<2024]
-        bb_dam_area <- array(0,c(length(years),5),dimnames = list(years,c("sampledata","sim_harvested","sim_all","sim_harv_nodeclman","sim_all_nodeclman")))
-        w_dam_area <- array(0,c(length(years),5),dimnames = list(years,c("sampledata","sim_harvested","sim_all","sim_harv_nodeclman","sim_all_nodeclman")))
+        bb_dam_area <- array(0,c(length(years),6),dimnames = list(years,c("sampledata","sim_harvested","sim_all","sim_harv_nodeclman","sim_all_nodeclman",
+                                                                          "simExpected")))
+        w_dam_area <- array(0,c(length(years),6),dimnames = list(years,c("sampledata","sim_harvested","sim_all","sim_harv_nodeclman","sim_all_nodeclman",
+                                                                         "simExpected")))
         probs_segm <- array(0,c(length(years),8),dimnames = list(years,c("min_pw_decl_segm","pw_median_decl","pw_median_decl_w","pw_median_nodecl",
                                                                          "min_pbb_decl_segm","pbb_median_decl","pbb_median_decl_bb","pbb_median_nodecl")))
-        
-        #ppprob <- sampleXs$region$multiOut[,years-2015,"Rh/SBBpob[layer_1]",1,2]
-        #indx <- max.col(ppprob, ties.method='first')
-        #ppprobmax <- ppprob[cbind(1:nrow(ppprob), indx)]
         
         ti <- 1
         for(ti in 1:length(years)){
@@ -1379,14 +1377,16 @@ calculateStatistics <- function(ij, fmi_from_allas=F, weighted = F, neighborIDs=
                                 sum(areaSamplebbHarv[,yeari-2015]),
                                 sum(areaSamplebb[,yeari-2015]),
                                 sum(areaSamplebbHarv[c(nibb,ninodecl),yeari-2015]),
-                                sum(areaSamplebb[c(nibb,ninodecl),yeari-2015]))
+                                sum(areaSamplebb[c(nibb,ninodecl),yeari-2015]),
+                                sum(dataS$area*pbb))
           w_dam_area[ti,] <- c(sum(dataS$area[which(dataS$forestdamagequalifier=="1504" &
                                                       as.numeric(dataS$dam_year)==yeari)]),
                                #sum(sampleXs$region$outDist[1,yeari-2015,"wrisk"]*dataS$area),
                                sum(areaSamplewHarv[,yeari-2015]),
                                sum(areaSamplew[,yeari-2015]),
                                sum(areaSamplewHarv[c(niw,ninodecl),yeari-2015]),
-                               sum(areaSamplew[c(niw,ninodecl),yeari-2015]))
+                               sum(areaSamplew[c(niw,ninodecl),yeari-2015]),
+                               sum(dataS$area*pw))
         }
         print(paste("Region",r_no,"/",regnames[r_noi],": bb damaged segment area"))
         print(bb_dam_area)
