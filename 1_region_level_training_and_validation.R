@@ -678,7 +678,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
     if(climScen==0 | r_no %in% c(8,9)){
       fname <- paste0("DeclaredDamages_",dam_names[inds],"_rno",r_no,"_",regnames[r_noi],".rdata")
       load(file=paste0(savepath,"/",fname))
-      print(paste("File",fname,"opened -> use damage coordinates as dam locations"))
+      print(paste("File",fname,"opened - use damage coordinates as dam locations"))
       
       # remove if species is na
       XYdamages <- XYdamages[which(!is.na(XYdamages$pine)),]
