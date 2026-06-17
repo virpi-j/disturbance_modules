@@ -1,6 +1,7 @@
 neighborsAll <- function(ij, dataS, declData, dataSS, clctDist = 150, KUVA = F){
   if(KUVA) print(paste0("rno",r_noi,": id ",ij))
- # print(paste0("rno",r_noi,": id ",ij))
+  toMemo <- ls()
+  # print(paste0("rno",r_noi,": id ",ij))
   sysT <- Sys.time()
   if(!exists("clctDist")) clctDist <- 150
   if(ij==1) print(paste("clctDist =",clctDist))
@@ -256,6 +257,7 @@ neighborsAll <- function(ij, dataS, declData, dataSS, clctDist = 150, KUVA = F){
   out <- c(dclct, dSBB, dWind, dclct_south)
   #print(paste(ij,Sys.time()-sysT))
   #print(out)
+  rm(list=setdiff(toMemo, "out")); gc()
   return(out)
 }
 
@@ -263,6 +265,7 @@ neighborsAll <- function(ij, dataS, declData, dataSS, clctDist = 150, KUVA = F){
 neighbors_data.all <- function(ij, data.all = sampleS,#data.IDs, data.all, 
                                clctDist = 1000, KUVA = F){
   if(KUVA) print(paste0("rno",r_no,": id ",ij))
+  toMemo <- ls()
   # print(paste0("rno",r_noi,": id ",ij))
   sysT <- Sys.time()
   if(!exists("clctDist")) clctDist <- 150
@@ -388,5 +391,6 @@ neighbors_data.all <- function(ij, data.all = sampleS,#data.IDs, data.all,
     }
   }
   out <- c(dclct)
+  rm(list=setdiff(toMemo,"out")); gc()
   return(out)
 }

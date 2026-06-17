@@ -994,15 +994,10 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
                    "minDist_s", "clearcutYear_s","nneighClearcut_s")
       
       
-      #source("../PREBAStesting/0.5_functions.R", local = T)
       print("Start running neighborsAll-function...")
       source("~/disturbance_modules/0.5_functions_updated.R", local=T)
       
       timeT <- Sys.time()
-      #ii <- 1
-      #dataS[ii,c("x","y")]
-      #neighborsAll(ii,dataS = dataS,declData = declDataor,dataSS = dataSS,clctDist = dlim,
-      #            KUVA=T)[1:3]
       outputNeighbor <- apply(data.table(c(1:nSegs)),1,neighborsAll,
                               dataS=dataS,
                               declData=declDataor, dataSS = dataSS,
@@ -1013,9 +1008,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
       outputNeighbor <- data.table(t(outputNeighbor))
       colnames(outputNeighbor) <- dimNams
       outputNeighbor[outputNeighbor==1e12] <- NA
-      #print(outputNeighbor)
       hist(outputNeighbor$minDist,40)
-      #rm(list=c("xx","yy","dx"))
       gc()
       if(ik==1){
         sampleTraining <- cbind(dataS,outputNeighbor)  
