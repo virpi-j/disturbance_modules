@@ -382,8 +382,6 @@ calculateOPSdataOld  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T
     tabX <- merge(data.IDs,data.all) # coords of the segments in sample outside declarations
     data.all[,x:=tabX$x[match(data.all$segID,tabX$segID)]]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
     data.all[,y:=tabX$y[match(data.all$segID,tabX$segID)]]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
-    #x <- tabX$x[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
-    #y <- tabX$y[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
     KUVA <- F
     if(KUVA){
       setkey(data.all,segID)
@@ -394,17 +392,9 @@ calculateOPSdataOld  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T
       plot(x[ni],y[ni])
     }
     rm("tabX"); gc()
-    #data.all[,x:=x]
-    #data.all[,y:=y]
-    #rm(list=c("x","y")); gc()
-    
+
     rm("data.IDs"); gc()
     if(r_no %in% c(8,9)){ # Lappi E and P: divide data.all according to y-coordinate
-      #setkey(data.all,segID)
-      #tabX <- merge(data.IDs,data.all) # coords of the segments in sample outside declarations
-      #x <- tabX$x[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"x"]
-      #y <- tabX$y[match(data.all$segID,tabX$segID)]#tabX[tabX[,I(which.max(y)),by=damSegId]$V1,"y"]
-      #rm("tabX"); gc()
       xybb <- array(0,c(nrow(XYdamages),2))  
       xybb[,1] <- XYdamages$x
       xybb[,2] <- XYdamages$y
@@ -659,6 +649,7 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
                                climScen=0, usePreviousIDs = F){
   toMem <- ls()
   r_no <- rnos[r_noi]
+  #tatata <- aetatratat
   
   print(paste("region",r_no))
   print(paste("Neighbor information =",neighborIDs))
@@ -890,6 +881,9 @@ calculateOPSdata  <-  function(r_noi, nSegs=1000, neighborIDs=T, weighted = T,
         gc()
       }
     }
+    if(exists("data.IDs")) {rm("data.IDs"); gc()}
+    if(exists("XYdamages")) {rm("XYdamages"); gc()}
+    if(exists("tabX")) {rm("tabX"); gc()}
   }
   #####
   # For the sample, indexes about neighbors
